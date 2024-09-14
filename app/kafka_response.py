@@ -1,4 +1,0 @@
-
-
-class KafkaResponse:
-    pass
