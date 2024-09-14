@@ -1,3 +1,4 @@
+import select
 import socket
 from dataclasses import dataclass
 from enum import Enum, unique
@@ -53,12 +54,22 @@ def make_response(request: KafkaRequest):
 
 
 def main():
-    server = socket.create_server(("localhost", 9092), reuse_port=True)
-    client, _ = server.accept()
+    server_socket = socket.create_server(("localhost", 9092), reuse_port=True)
+    client_sockets = set()
     while True:
-        request = KafkaRequest.from_client(client)
-        print(request)
-        client.sendall(make_response(request))
+        ready_read_sockets, _, _ = select.select(
+            client_sockets.union({server_socket}), [], []
+        )
+
+        for s in ready_read_sockets:
+            if s is server_socket:
+                client_socket, _ = server_socket.accept()
+                client_sockets.add(client_socket)
+                continue
+
+            request = KafkaRequest.from_client(s)
+            print(request)
+            s.sendall(make_response(request))
 
 
 if __name__ == "__main__":
