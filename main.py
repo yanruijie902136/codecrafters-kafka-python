@@ -1,41 +1,47 @@
-import selectors
-import socket
-from typing import NoReturn
+import pprint
+from selectors import EVENT_READ, DefaultSelector
+from socket import create_server, socket
 
-from kafka import Request, request_to_response
+from kafka.request import Request
+from kafka.response import Response
 
 
-class Server:
-    def __init__(self, address: tuple[str, int]) -> None:
-        self.server_socket = socket.create_server(address, reuse_port=True)
+class KafkaServer:
+    def __init__(self, host: str, port: int):
+        self.server_socket = create_server((host, port), reuse_port=True)
         self.server_socket.setblocking(False)
 
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.server_socket, selectors.EVENT_READ)
+        self.selector = DefaultSelector()
+        self.selector.register(self.server_socket, EVENT_READ)
 
-    def start(self) -> NoReturn:
+    def start(self):
         while True:
             for key, _ in self.selector.select():
                 if key.fileobj is self.server_socket:
                     self.accept_new_client()
                 else:
-                    self.handle_client(client_socket=key.fileobj)
+                    self.serve_client(client_socket=key.fileobj)
 
-    def accept_new_client(self) -> None:
+    def accept_new_client(self):
         client_socket, _ = self.server_socket.accept()
         client_socket.setblocking(False)
-        self.selector.register(client_socket, selectors.EVENT_READ)
+        self.selector.register(client_socket, EVENT_READ)
 
-    def handle_client(self, client_socket: socket.socket) -> None:
-        try:
-            request = Request.from_client(client_socket)
-        except:
-            self.selector.unregister(client_socket)
-            client_socket.close()
-            return
-        print(request)
-        client_socket.sendall(request_to_response(request))
+    def serve_client(self, client_socket: socket):
+        # try:
+        #     request = Request.from_client(client_socket)
+        # except:
+        #     self.selector.unregister(client_socket)
+        #     client_socket.close()
+        #     return
+
+        request = Request.from_client(client_socket)
+        pprint.pprint(request)
+        response = Response.from_request(request)
+        pprint.pprint(response)
+        client_socket.sendall(response.encode())
 
 
-if __name__ == '__main__':
-    Server(('localhost', 9092)).start()
+if __name__ == "__main__":
+    server = KafkaServer(host="localhost", port=9092)
+    server.start()

@@ -1,91 +1,59 @@
-from __future__ import annotations
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
-import abc
-import dataclasses
-
-from .api_key import ApiKey
-from .error_code import ErrorCode
+from .constants import ApiKey
+from .primitive_types import *
 from .request import Request
 
-__all__ = ["Response", "FetchResponse", "ApiVersionsResponse"]
 
-TAG_BUFFER = b"\x00"
-
-
-class Response(abc.ABC):
-    @abc.abstractmethod
-    def serialize(self) -> bytes:
-        raise NotImplementedError
+@dataclass
+class ResponseHeader:
+    correlation_id: int
+    has_tag_buffer: bool
 
     @staticmethod
-    @abc.abstractmethod
-    def from_request(request: Request) -> Response:
-        raise NotImplementedError
-
-
-@dataclasses.dataclass(frozen=True)
-class FetchResponse(Response):
-    throttle_time_ms: int
-    error_code: ErrorCode
-    session_id: int
-    responses = []
-
-    def serialize(self) -> bytes:
-        return b"".join([
-            self.throttle_time_ms.to_bytes(4),
-            self.error_code.to_bytes(2),
-            self.session_id.to_bytes(4),
-            TAG_BUFFER,
-            int(len(self.responses) + 1).to_bytes(1),
-            TAG_BUFFER,
-        ])
-
-    @staticmethod
-    def from_request(request: Request) -> FetchResponse:
-        return FetchResponse(
-            throttle_time_ms=0, error_code=ErrorCode.NONE, session_id=0
+    def from_request(request: Request):
+        return ResponseHeader(
+            correlation_id=request.header.correlation_id,
+            has_tag_buffer=request.header.api_key is not ApiKey.API_VERSIONS,
         )
 
-
-@dataclasses.dataclass
-class ApiKeyEntry:
-    api_key: ApiKey
-    min_version: int
-    max_version: int
-
-    def serialize(self) -> bytes:
-        return b"".join([
-            self.api_key.to_bytes(2),
-            self.min_version.to_bytes(2),
-            self.max_version.to_bytes(2),
-            TAG_BUFFER,
-        ])
+    def encode(self):
+        encoding = encode_int32(self.correlation_id)
+        if self.has_tag_buffer:
+            encoding += encode_tagged_fields()
+        return encoding
 
 
-@dataclasses.dataclass
-class ApiVersionsResponse(Response):
-    error_code: ErrorCode
-    throttle_time_ms: int
-    api_keys = [
-        ApiKeyEntry(ApiKey.FETCH, min_version=0, max_version=16),
-        ApiKeyEntry(ApiKey.API_VERSIONS, min_version=0, max_version=4),
-    ]
+class ResponseBody(ABC):
+    @staticmethod
+    @abstractmethod
+    def from_request(request: Request):
+        raise NotImplementedError
 
-    def serialize(self) -> bytes:
-        return b"".join([
-            self.error_code.to_bytes(2),
-            int(len(self.api_keys) + 1).to_bytes(1),
-            b"".join(entry.serialize() for entry in self.api_keys),
-            self.throttle_time_ms.to_bytes(4),
-            TAG_BUFFER,
-        ])
+    @abstractmethod
+    def encode(self) -> bytes:
+        raise NotImplementedError
+
+
+@dataclass
+class Response:
+    header: ResponseHeader
+    body: ResponseBody
 
     @staticmethod
-    def from_request(request: Request) -> ApiVersionsResponse:
-        valid_api_versions = [0, 1, 2, 3, 4]
-        error_code = (
-            ErrorCode.NONE
-            if request.api_version in valid_api_versions
-            else ErrorCode.UNSUPPORTED_VERSION
-        )
-        return ApiVersionsResponse(error_code=error_code, throttle_time_ms=0)
+    def from_request(request: Request):
+        header = ResponseHeader.from_request(request)
+        match request.header.api_key:
+            case ApiKey.FETCH:
+                from .fetch import FetchResponseBody
+                body = FetchResponseBody.from_request(request)
+            case ApiKey.API_VERSIONS:
+                from .api_versions import ApiVersionsResponseBody
+                body = ApiVersionsResponseBody.from_request(request)
+
+        return Response(header=header, body=body)
+
+    def encode(self):
+        encoding = self.header.encode() + self.body.encode()
+        return encode_int32(len(encoding)) + encoding
