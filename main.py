@@ -20,7 +20,7 @@ class KafkaServer:
                 if key.fileobj is self.server_socket:
                     self.accept_new_client()
                 else:
-                    self.serve_client(client_socket=key.fileobj)
+                    self.serve_client(key.fileobj)
 
     def accept_new_client(self):
         client_socket, _ = self.server_socket.accept()
@@ -28,18 +28,20 @@ class KafkaServer:
         self.selector.register(client_socket, EVENT_READ)
 
     def serve_client(self, client_socket: socket):
-        # try:
-        #     request = Request.from_client(client_socket)
-        # except:
-        #     self.selector.unregister(client_socket)
-        #     client_socket.close()
-        #     return
+        bytes = client_socket.recv(8192)
+        if not bytes:
+            self.disconnect_client(client_socket)
+            return
 
-        request = Request.from_client(client_socket)
+        request = Request.from_bytes(bytes)
         pprint.pprint(request)
         response = Response.from_request(request)
         pprint.pprint(response)
         client_socket.sendall(response.encode())
+
+    def disconnect_client(self, client_socket: socket):
+        self.selector.unregister(client_socket)
+        client_socket.close()
 
 
 if __name__ == "__main__":

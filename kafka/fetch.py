@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from io import BytesIO
+from uuid import UUID
 
 from .constants import ErrorCode
 from .primitive_types import *
@@ -20,16 +22,16 @@ class TopicPartitionEntry:
     partition_max_bytes: int
 
     @staticmethod
-    def decode(bytes: bytes):
-        partition, bytes = decode_int32(bytes)
-        current_leader_epoch, bytes = decode_int32(bytes)
-        fetch_offset, bytes = decode_int64(bytes)
-        last_fetched_epoch, bytes = decode_int32(bytes)
-        log_start_offset, bytes = decode_int64(bytes)
-        partition_max_bytes, bytes = decode_int32(bytes)
-        _, bytes = decode_tagged_fields(bytes)
+    def decode(byte_stream: BytesIO):
+        partition = decode_int32(byte_stream)
+        current_leader_epoch = decode_int32(byte_stream)
+        fetch_offset = decode_int64(byte_stream)
+        last_fetched_epoch = decode_int32(byte_stream)
+        log_start_offset = decode_int64(byte_stream)
+        partition_max_bytes = decode_int32(byte_stream)
+        decode_tagged_fields(byte_stream)
 
-        entry = TopicPartitionEntry(
+        return TopicPartitionEntry(
             partition=partition,
             current_leader_epoch=current_leader_epoch,
             fetch_offset=fetch_offset,
@@ -37,35 +39,34 @@ class TopicPartitionEntry:
             log_start_offset=log_start_offset,
             partition_max_bytes=partition_max_bytes,
         )
-        return entry, bytes
 
 
 @dataclass
 class TopicEntry:
-    topic_id: bytes
+    topic_id: UUID
     partitions: list[TopicPartitionEntry]
 
     @staticmethod
-    def decode(bytes: bytes):
-        topic_id, bytes = decode_uuid(bytes)
-        partitions, bytes = decode_compact_array(bytes, TopicPartitionEntry.decode)
-        _, bytes = decode_tagged_fields(bytes)
+    def decode(byte_stream: BytesIO):
+        topic_id = decode_uuid(byte_stream)
+        partitions = decode_compact_array(byte_stream, TopicPartitionEntry.decode)
+        decode_tagged_fields(byte_stream)
 
-        return TopicEntry(topic_id=topic_id, partitions=partitions), bytes
+        return TopicEntry(topic_id=topic_id, partitions=partitions)
 
 
 @dataclass
 class ForgottonTopicEntry:
-    topic_id: bytes
+    topic_id: UUID
     partitions: list[int]
 
     @staticmethod
-    def decode(bytes: bytes):
-        topic_id, bytes = decode_uuid(bytes)
-        partitions, bytes = decode_compact_array(bytes, decode_int32)
-        _, bytes = decode_tagged_fields(bytes)
+    def decode(byte_stream: BytesIO):
+        topic_id = decode_uuid(byte_stream)
+        partitions = decode_compact_array(byte_stream, decode_int32)
+        decode_tagged_fields(byte_stream)
 
-        return ForgottonTopicEntry(topic_id=topic_id, partitions=partitions), bytes
+        return ForgottonTopicEntry(topic_id=topic_id, partitions=partitions)
 
 
 @dataclass
@@ -81,17 +82,17 @@ class FetchRequestBody(RequestBody):
     rack_id: str
 
     @staticmethod
-    def decode(bytes: bytes):
-        max_wait_ms, bytes = decode_int32(bytes)
-        min_bytes, bytes = decode_int32(bytes)
-        max_bytes, bytes = decode_int32(bytes)
-        isolation_level, bytes = decode_int8(bytes)
-        session_id, bytes = decode_int32(bytes)
-        session_epoch, bytes = decode_int32(bytes)
-        topics, bytes = decode_compact_array(bytes, TopicEntry.decode)
-        forgotten_topics_data, bytes = decode_compact_array(bytes, ForgottonTopicEntry.decode)
-        rack_id, bytes = decode_compact_string(bytes)
-        _, bytes = decode_tagged_fields(bytes)
+    def decode(byte_stream: BytesIO):
+        max_wait_ms = decode_int32(byte_stream)
+        min_bytes = decode_int32(byte_stream)
+        max_bytes = decode_int32(byte_stream)
+        isolation_level = decode_int8(byte_stream)
+        session_id = decode_int32(byte_stream)
+        session_epoch = decode_int32(byte_stream)
+        topics = decode_compact_array(byte_stream, TopicEntry.decode)
+        forgotten_topics_data = decode_compact_array(byte_stream, ForgottonTopicEntry.decode)
+        rack_id = decode_compact_string(byte_stream)
+        decode_tagged_fields(byte_stream)
 
         return FetchRequestBody(
             max_wait_ms=max_wait_ms,
@@ -150,7 +151,7 @@ class ResponsePartitionEntry:
 
 @dataclass
 class ResponseEntry:
-    topic_id: bytes
+    topic_id: UUID
     partitions: list[ResponsePartitionEntry]
 
     def encode(self):

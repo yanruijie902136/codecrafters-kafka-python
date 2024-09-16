@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from io import BytesIO
 
 from .constants import ApiKey, ErrorCode
 from .primitive_types import *
@@ -31,10 +32,10 @@ class ApiVersionsRequestBody(RequestBody):
     client_software_version: str
 
     @staticmethod
-    def decode(bytes: bytes):
-        client_software_name, bytes = decode_compact_string(bytes)
-        client_software_version, bytes = decode_compact_string(bytes)
-        _, bytes = decode_tagged_fields(bytes)
+    def decode(byte_stream: BytesIO):
+        client_software_name = decode_compact_string(byte_stream)
+        client_software_version = decode_compact_string(byte_stream)
+        decode_tagged_fields(byte_stream)
 
         return ApiVersionsRequestBody(
             client_software_name=client_software_name,
