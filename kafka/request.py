@@ -1,12 +1,12 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from io import BytesIO
+import abc
+import dataclasses
+import io
 
 from .constants import ApiKey
 from .primitive_types import *
 
 
-@dataclass
+@dataclasses.dataclass
 class RequestHeader:
     api_key: ApiKey
     api_version: int
@@ -14,7 +14,7 @@ class RequestHeader:
     client_id: str
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         api_key = ApiKey(decode_int16(byte_stream))
         api_version = decode_int16(byte_stream)
         correlation_id = decode_int32(byte_stream)
@@ -28,21 +28,21 @@ class RequestHeader:
         )
 
 
-class RequestBody(ABC):
+class RequestBody(abc.ABC):
     @staticmethod
-    @abstractmethod
-    def decode(byte_stream: BytesIO):
+    @abc.abstractmethod
+    def decode(byte_stream: io.BytesIO):
         raise NotImplementedError
 
 
-@dataclass
+@dataclasses.dataclass
 class Request:
     header: RequestHeader
     body: RequestBody
 
     @staticmethod
     def from_bytes(bytes: bytes):
-        byte_stream = BytesIO(bytes)
+        byte_stream = io.BytesIO(bytes)
         _ = decode_int32(byte_stream)
         header = RequestHeader.decode(byte_stream)
         decode_tagged_fields(byte_stream)

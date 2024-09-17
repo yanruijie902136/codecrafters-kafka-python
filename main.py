@@ -1,18 +1,17 @@
 import pprint
-from selectors import EVENT_READ, DefaultSelector
-from socket import create_server, socket
+import selectors
+import socket
 
-from kafka.request import Request
-from kafka.response import Response
+import kafka
 
 
 class KafkaServer:
     def __init__(self, host: str, port: int):
-        self.server_socket = create_server((host, port), reuse_port=True)
+        self.server_socket = socket.create_server((host, port), reuse_port=True)
         self.server_socket.setblocking(False)
 
-        self.selector = DefaultSelector()
-        self.selector.register(self.server_socket, EVENT_READ)
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(self.server_socket, selectors.EVENT_READ)
 
     def start(self):
         while True:
@@ -25,21 +24,21 @@ class KafkaServer:
     def accept_new_client(self):
         client_socket, _ = self.server_socket.accept()
         client_socket.setblocking(False)
-        self.selector.register(client_socket, EVENT_READ)
+        self.selector.register(client_socket, selectors.EVENT_READ)
 
-    def serve_client(self, client_socket: socket):
+    def serve_client(self, client_socket: socket.socket):
         bytes = client_socket.recv(8192)
         if not bytes:
             self.disconnect_client(client_socket)
             return
 
-        request = Request.from_bytes(bytes)
+        request = kafka.Request.from_bytes(bytes)
         pprint.pprint(request)
-        response = Response.from_request(request)
+        response = kafka.Response.from_request(request)
         pprint.pprint(response)
         client_socket.sendall(response.encode())
 
-    def disconnect_client(self, client_socket: socket):
+    def disconnect_client(self, client_socket: socket.socket):
         self.selector.unregister(client_socket)
         client_socket.close()
 

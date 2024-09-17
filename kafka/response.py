@@ -1,12 +1,12 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+import abc
+import dataclasses
 
 from .constants import ApiKey
 from .primitive_types import *
 from .request import Request
 
 
-@dataclass
+@dataclasses.dataclass
 class ResponseHeader:
     correlation_id: int
     has_tag_buffer: bool
@@ -25,18 +25,18 @@ class ResponseHeader:
         return encoding
 
 
-class ResponseBody(ABC):
+class ResponseBody(abc.ABC):
     @staticmethod
-    @abstractmethod
+    @abc.abstractmethod
     def from_request(request: Request):
         raise NotImplementedError
 
-    @abstractmethod
+    @abc.abstractmethod
     def encode(self) -> bytes:
         raise NotImplementedError
 
 
-@dataclass
+@dataclasses.dataclass
 class Response:
     header: ResponseHeader
     body: ResponseBody

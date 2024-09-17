@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from io import BytesIO
+import dataclasses
+import io
 
 from .constants import ApiKey, ErrorCode
 from .primitive_types import *
@@ -11,7 +11,7 @@ from .response import ResponseBody
 ###########
 
 
-@dataclass
+@dataclasses.dataclass
 class ApiKeyEntry:
     api_key: ApiKey
     min_version: int
@@ -26,13 +26,13 @@ class ApiKeyEntry:
         ])
 
 
-@dataclass
+@dataclasses.dataclass
 class ApiVersionsRequestBody(RequestBody):
     client_software_name: str
     client_software_version: str
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         client_software_name = decode_compact_string(byte_stream)
         client_software_version = decode_compact_string(byte_stream)
         decode_tagged_fields(byte_stream)
@@ -48,7 +48,7 @@ class ApiVersionsRequestBody(RequestBody):
 ############
 
 
-@dataclass
+@dataclasses.dataclass
 class ApiVersionsResponseBody(ResponseBody):
     error_code: ErrorCode
     api_keys: list[ApiKeyEntry]

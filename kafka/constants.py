@@ -1,4 +1,4 @@
-from enum import IntEnum
+import enum
 
 __all__ = [
     "ApiKey",
@@ -6,12 +6,14 @@ __all__ = [
 ]
 
 
-class ApiKey(IntEnum):
+@enum.unique
+class ApiKey(enum.IntEnum):
     FETCH = 1
     API_VERSIONS = 18
 
 
-class ErrorCode(IntEnum):
+@enum.unique
+class ErrorCode(enum.IntEnum):
     NONE = 0
     UNSUPPORTED_VERSION = 35
     UNKNOWN_TOPIC = 100

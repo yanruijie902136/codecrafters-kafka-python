@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-from io import BytesIO
-from uuid import UUID
+import dataclasses
+import io
+import uuid
 
 from .constants import ErrorCode
 from .primitive_types import *
@@ -12,7 +12,7 @@ from .response import ResponseBody
 ###########
 
 
-@dataclass
+@dataclasses.dataclass
 class TopicPartitionEntry:
     partition: int
     current_leader_epoch: int
@@ -22,7 +22,7 @@ class TopicPartitionEntry:
     partition_max_bytes: int
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         partition = decode_int32(byte_stream)
         current_leader_epoch = decode_int32(byte_stream)
         fetch_offset = decode_int64(byte_stream)
@@ -41,13 +41,13 @@ class TopicPartitionEntry:
         )
 
 
-@dataclass
+@dataclasses.dataclass
 class TopicEntry:
-    topic_id: UUID
+    topic_id: uuid.UUID
     partitions: list[TopicPartitionEntry]
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         topic_id = decode_uuid(byte_stream)
         partitions = decode_compact_array(byte_stream, TopicPartitionEntry.decode)
         decode_tagged_fields(byte_stream)
@@ -55,13 +55,13 @@ class TopicEntry:
         return TopicEntry(topic_id=topic_id, partitions=partitions)
 
 
-@dataclass
+@dataclasses.dataclass
 class ForgottonTopicEntry:
-    topic_id: UUID
+    topic_id: uuid.UUID
     partitions: list[int]
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         topic_id = decode_uuid(byte_stream)
         partitions = decode_compact_array(byte_stream, decode_int32)
         decode_tagged_fields(byte_stream)
@@ -69,7 +69,7 @@ class ForgottonTopicEntry:
         return ForgottonTopicEntry(topic_id=topic_id, partitions=partitions)
 
 
-@dataclass
+@dataclasses.dataclass
 class FetchRequestBody(RequestBody):
     max_wait_ms: int
     min_bytes: int
@@ -82,7 +82,7 @@ class FetchRequestBody(RequestBody):
     rack_id: str
 
     @staticmethod
-    def decode(byte_stream: BytesIO):
+    def decode(byte_stream: io.BytesIO):
         max_wait_ms = decode_int32(byte_stream)
         min_bytes = decode_int32(byte_stream)
         max_bytes = decode_int32(byte_stream)
@@ -112,7 +112,7 @@ class FetchRequestBody(RequestBody):
 ############
 
 
-@dataclass
+@dataclasses.dataclass
 class AbortedTransactionEntry:
     producer_id: int
     first_offset: int
@@ -125,14 +125,14 @@ class AbortedTransactionEntry:
         ])
 
 
-@dataclass
+@dataclasses.dataclass
 class ResponsePartitionEntry:
     partition_index: int
     error_code: ErrorCode
     high_watermark: int = 0
     last_stable_offset: int = 0
     log_start_offset: int = 0
-    aborted_transactions: list[AbortedTransactionEntry] = field(default_factory=list)
+    aborted_transactions: list[AbortedTransactionEntry] = dataclasses.field(default_factory=list)
     preferred_read_replica: int = 0
 
     def encode(self):
@@ -149,9 +149,9 @@ class ResponsePartitionEntry:
         ])
 
 
-@dataclass
+@dataclasses.dataclass
 class ResponseEntry:
-    topic_id: UUID
+    topic_id: uuid.UUID
     partitions: list[ResponsePartitionEntry]
 
     def encode(self):
@@ -162,7 +162,7 @@ class ResponseEntry:
         ])
 
 
-@dataclass
+@dataclasses.dataclass
 class FetchResponseBody(ResponseBody):
     throttle_time_ms: int
     error_code: ErrorCode
