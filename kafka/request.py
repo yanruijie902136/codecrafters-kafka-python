@@ -15,16 +15,11 @@ class RequestHeader:
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        api_key = ApiKey(decode_int16(byte_stream))
-        api_version = decode_int16(byte_stream)
-        correlation_id = decode_int32(byte_stream)
-        client_id = decode_nullable_string(byte_stream)
-
         return RequestHeader(
-            api_key=api_key,
-            api_version=api_version,
-            correlation_id=correlation_id,
-            client_id=client_id,
+            api_key=ApiKey(decode_int16(byte_stream)),
+            api_version=decode_int16(byte_stream),
+            correlation_id=decode_int32(byte_stream),
+            client_id=decode_nullable_string(byte_stream),
         )
 
 
