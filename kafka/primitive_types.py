@@ -91,11 +91,7 @@ def decode_nullable_string(byte_stream: BytesIO):
 def decode_compact_array(byte_stream: BytesIO, decode_func: Callable[[BytesIO], Any]):
     n = decode_varint(byte_stream)
     n -= 1
-    array = []
-    while len(array) < n:
-        item = decode_func(byte_stream)
-        array.append(item)
-    return array
+    return [decode_func(byte_stream) for _ in range(n)]
 
 
 def encode_compact_array(array: list):
