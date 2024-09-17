@@ -188,7 +188,7 @@ class FetchResponseBody(ResponseBody):
 
         return FetchResponseBody(
             throttle_time_ms=0,
-            error_code=0,
+            error_code=ErrorCode.NONE,
             session_id=0,
             responses=responses,
         )
