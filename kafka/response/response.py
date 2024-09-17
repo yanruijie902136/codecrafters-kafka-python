@@ -1,28 +1,28 @@
 import abc
 import dataclasses
 
-from .constants import ApiKey
-from .primitive_types import *
-from .request import Request
+from ..api_key import ApiKey
+from ..encode_functions import *
+from ..request import Request, RequestHeader
 
 
 @dataclasses.dataclass
 class ResponseHeader:
+    api_key: ApiKey
     correlation_id: int
-    has_tag_buffer: bool
 
     @staticmethod
-    def from_request(request: Request):
+    def from_request_header(request_header: RequestHeader):
         return ResponseHeader(
-            correlation_id=request.header.correlation_id,
-            has_tag_buffer=request.header.api_key is not ApiKey.API_VERSIONS,
+            api_key=request_header.api_key,
+            correlation_id=request_header.correlation_id,
         )
 
     def encode(self):
-        encoding = encode_int32(self.correlation_id)
-        if self.has_tag_buffer:
-            encoding += encode_tagged_fields()
-        return encoding
+        if self.api_key is ApiKey.API_VERSIONS:
+            # The ApiVersions response uses the v0 format (without TAG_BUFFER).
+            return encode_int32(self.correlation_id)
+        return encode_int32(self.correlation_id) + encode_tagged_fields()
 
 
 class ResponseBody(abc.ABC):
@@ -43,7 +43,8 @@ class Response:
 
     @staticmethod
     def from_request(request: Request):
-        header = ResponseHeader.from_request(request)
+        header = ResponseHeader.from_request_header(request.header)
+
         match request.header.api_key:
             case ApiKey.FETCH:
                 from .fetch import FetchResponseBody
@@ -55,5 +56,5 @@ class Response:
         return Response(header=header, body=body)
 
     def encode(self):
-        encoding = self.header.encode() + self.body.encode()
-        return encode_int32(len(encoding)) + encoding
+        message = self.header.encode() + self.body.encode()
+        return encode_int32(len(message)) + message
