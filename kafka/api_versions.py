@@ -33,14 +33,12 @@ class ApiVersionsRequestBody(RequestBody):
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        client_software_name = decode_compact_string(byte_stream)
-        client_software_version = decode_compact_string(byte_stream)
-        decode_tagged_fields(byte_stream)
-
-        return ApiVersionsRequestBody(
-            client_software_name=client_software_name,
-            client_software_version=client_software_version,
+        body = ApiVersionsRequestBody(
+            client_software_name=decode_compact_string(byte_stream),
+            client_software_version=decode_compact_string(byte_stream),
         )
+        decode_tagged_fields(byte_stream)
+        return body
 
 
 ############

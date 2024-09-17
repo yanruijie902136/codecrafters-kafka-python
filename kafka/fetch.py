@@ -23,22 +23,16 @@ class TopicPartitionEntry:
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        partition = decode_int32(byte_stream)
-        current_leader_epoch = decode_int32(byte_stream)
-        fetch_offset = decode_int64(byte_stream)
-        last_fetched_epoch = decode_int32(byte_stream)
-        log_start_offset = decode_int64(byte_stream)
-        partition_max_bytes = decode_int32(byte_stream)
-        decode_tagged_fields(byte_stream)
-
-        return TopicPartitionEntry(
-            partition=partition,
-            current_leader_epoch=current_leader_epoch,
-            fetch_offset=fetch_offset,
-            last_fetched_epoch=last_fetched_epoch,
-            log_start_offset=log_start_offset,
-            partition_max_bytes=partition_max_bytes,
+        entry = TopicPartitionEntry(
+            partition=decode_int32(byte_stream),
+            current_leader_epoch=decode_int32(byte_stream),
+            fetch_offset=decode_int64(byte_stream),
+            last_fetched_epoch=decode_int32(byte_stream),
+            log_start_offset=decode_int64(byte_stream),
+            partition_max_bytes=decode_int32(byte_stream),
         )
+        decode_tagged_fields(byte_stream)
+        return entry
 
 
 @dataclasses.dataclass
@@ -48,11 +42,12 @@ class TopicEntry:
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        topic_id = decode_uuid(byte_stream)
-        partitions = decode_compact_array(byte_stream, TopicPartitionEntry.decode)
+        entry = TopicEntry(
+            topic_id=decode_uuid(byte_stream),
+            partitions=decode_compact_array(byte_stream, TopicPartitionEntry.decode),
+        )
         decode_tagged_fields(byte_stream)
-
-        return TopicEntry(topic_id=topic_id, partitions=partitions)
+        return entry
 
 
 @dataclasses.dataclass
@@ -62,11 +57,12 @@ class ForgottonTopicEntry:
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        topic_id = decode_uuid(byte_stream)
-        partitions = decode_compact_array(byte_stream, decode_int32)
+        entry = ForgottonTopicEntry(
+            topic_id=decode_uuid(byte_stream),
+            partitions=decode_compact_array(byte_stream, decode_int32),
+        )
         decode_tagged_fields(byte_stream)
-
-        return ForgottonTopicEntry(topic_id=topic_id, partitions=partitions)
+        return entry
 
 
 @dataclasses.dataclass
@@ -83,28 +79,19 @@ class FetchRequestBody(RequestBody):
 
     @staticmethod
     def decode(byte_stream: io.BytesIO):
-        max_wait_ms = decode_int32(byte_stream)
-        min_bytes = decode_int32(byte_stream)
-        max_bytes = decode_int32(byte_stream)
-        isolation_level = decode_int8(byte_stream)
-        session_id = decode_int32(byte_stream)
-        session_epoch = decode_int32(byte_stream)
-        topics = decode_compact_array(byte_stream, TopicEntry.decode)
-        forgotten_topics_data = decode_compact_array(byte_stream, ForgottonTopicEntry.decode)
-        rack_id = decode_compact_string(byte_stream)
-        decode_tagged_fields(byte_stream)
-
-        return FetchRequestBody(
-            max_wait_ms=max_wait_ms,
-            min_bytes=min_bytes,
-            max_bytes=max_bytes,
-            isolation_level=isolation_level,
-            session_id=session_id,
-            session_epoch=session_epoch,
-            topics=topics,
-            forgotten_topics_data=forgotten_topics_data,
-            rack_id=rack_id,
+        body = FetchRequestBody(
+            max_wait_ms=decode_int32(byte_stream),
+            min_bytes=decode_int32(byte_stream),
+            max_bytes=decode_int32(byte_stream),
+            isolation_level=decode_int8(byte_stream),
+            session_id=decode_int32(byte_stream),
+            session_epoch=decode_int32(byte_stream),
+            topics=decode_compact_array(byte_stream, TopicEntry.decode),
+            forgotten_topics_data=decode_compact_array(byte_stream, ForgottonTopicEntry.decode),
+            rack_id=decode_compact_string(byte_stream),
         )
+        decode_tagged_fields(byte_stream)
+        return body
 
 
 ############
@@ -181,9 +168,12 @@ class FetchResponseBody(ResponseBody):
                 ResponseEntry(
                     topic_id=topic_entry.topic_id,
                     partitions=[
-                        ResponsePartitionEntry(partition_index=0, error_code=ErrorCode.UNKNOWN_TOPIC),
-                    ]
-                )
+                        ResponsePartitionEntry(
+                            partition_index=0,
+                            error_code=ErrorCode.UNKNOWN_TOPIC,
+                        ),
+                    ],
+                ),
             ]
 
         return FetchResponseBody(
