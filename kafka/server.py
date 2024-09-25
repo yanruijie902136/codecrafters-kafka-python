@@ -1,5 +1,4 @@
 import asyncio
-import pprint
 
 from .protocol import KafkaRequest, KafkaResponse
 
@@ -25,9 +24,7 @@ class KafkaServer:
                 break
 
             request = KafkaRequest.from_bytes(data)
-            pprint.pprint(request)
             response = KafkaResponse.from_request(request)
-            pprint.pprint(response)
 
             writer.write(response.encode())
             await writer.drain()
