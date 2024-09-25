@@ -1,34 +1,36 @@
+from __future__ import annotations
+
 import abc
 import dataclasses
 
-from ..api_key import ApiKey
-from ..encode_functions import *
-from ..request import Request, RequestHeader
+from .api_key import ApiKey
+from .encode_functions import encode_int32, encode_tagged_fields
+from .request import KafkaRequest, KafkaRequestHeader
 
 
 @dataclasses.dataclass
-class ResponseHeader:
-    api_key: ApiKey
+class KafkaResponseHeader:
+    api_key: ApiKey     # Only used for deciding the header format. This won't be sent.
     correlation_id: int
 
-    @staticmethod
-    def from_request_header(request_header: RequestHeader):
-        return ResponseHeader(
+    @classmethod
+    def from_request_header(cls, request_header: KafkaRequestHeader) -> KafkaResponseHeader:
+        return KafkaResponseHeader(
             api_key=request_header.api_key,
             correlation_id=request_header.correlation_id,
         )
 
-    def encode(self):
+    def encode(self) -> bytes:
         if self.api_key is ApiKey.API_VERSIONS:
             # The ApiVersions response uses the v0 format (without TAG_BUFFER).
             return encode_int32(self.correlation_id)
         return encode_int32(self.correlation_id) + encode_tagged_fields()
 
 
-class ResponseBody(abc.ABC):
-    @staticmethod
+class KafkaResponseBody(abc.ABC):
+    @classmethod
     @abc.abstractmethod
-    def from_request(request: Request):
+    def from_request(cls, request: KafkaRequest) -> KafkaResponseBody:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -37,14 +39,15 @@ class ResponseBody(abc.ABC):
 
 
 @dataclasses.dataclass
-class Response:
-    header: ResponseHeader
-    body: ResponseBody
+class KafkaResponse:
+    header: KafkaResponseHeader
+    body: KafkaResponseBody
 
-    @staticmethod
-    def from_request(request: Request):
-        header = ResponseHeader.from_request_header(request.header)
+    @classmethod
+    def from_request(cls, request: KafkaRequest) -> KafkaResponse:
+        header = KafkaResponseHeader.from_request_header(request.header)
 
+        body: KafkaResponseBody
         match request.header.api_key:
             case ApiKey.FETCH:
                 from .fetch import FetchResponseBody
@@ -53,8 +56,8 @@ class Response:
                 from .api_versions import ApiVersionsResponseBody
                 body = ApiVersionsResponseBody.from_request(request)
 
-        return Response(header=header, body=body)
+        return KafkaResponse(header, body)
 
-    def encode(self):
+    def encode(self) -> bytes:
         message = self.header.encode() + self.body.encode()
         return encode_int32(len(message)) + message

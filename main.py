@@ -2,11 +2,11 @@
 
 import asyncio
 
-import kafka
+from kafka import KafkaServer
 
 
 def main() -> None:
-    server = kafka.KafkaServer()
+    server = KafkaServer()
     asyncio.run(server.start())
 
 
