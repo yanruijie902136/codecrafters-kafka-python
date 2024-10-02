@@ -47,7 +47,6 @@ class KafkaResponse:
     def from_request(cls, request: KafkaRequest) -> KafkaResponse:
         header = KafkaResponseHeader.from_request_header(request.header)
 
-        body: KafkaResponseBody
         match request.header.api_key:
             case ApiKey.FETCH:
                 from .fetch import FetchResponseBody

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 import dataclasses
 import io
 
@@ -42,12 +43,12 @@ class KafkaRequest:
     body: KafkaRequestBody
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> KafkaRequest:
-        byte_stream = io.BytesIO(data)
-        decode_int32(byte_stream)   # The first 4 bytes represent the message length.
+    async def from_reader(cls, reader: asyncio.StreamReader) -> KafkaRequest:
+        message_length = int.from_bytes(await reader.readexactly(4))
+        byte_stream = io.BytesIO(await reader.readexactly(message_length))
+
         header = KafkaRequestHeader.decode(byte_stream)
 
-        body: KafkaRequestBody
         match header.api_key:
             case ApiKey.FETCH:
                 from .fetch import FetchRequestBody
@@ -56,5 +57,4 @@ class KafkaRequest:
                 from .api_versions import ApiVersionsRequestBody
                 body = ApiVersionsRequestBody.decode(byte_stream)
 
-        assert not byte_stream.read(), "Unexpected unused bytes."
         return KafkaRequest(header, body)

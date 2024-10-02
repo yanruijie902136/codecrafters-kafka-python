@@ -1,6 +1,10 @@
 import uuid
 
 
+def encode_compact_array(array: list) -> bytes:
+    return encode_varint(len(array) + 1) + b"".join(item.encode() for item in array)
+
+
 def encode_int8(integer: int) -> bytes:
     return integer.to_bytes(1, signed=True)
 
@@ -17,6 +21,14 @@ def encode_int64(integer: int) -> bytes:
     return integer.to_bytes(8, signed=True)
 
 
+def encode_tagged_fields() -> bytes:
+    return b"\x00"
+
+
+def encode_uuid(uuid: uuid.UUID) -> bytes:
+    return uuid.bytes
+
+
 def encode_varint(integer: int) -> bytes:
     BASE = 128
     encoding = b""
@@ -27,15 +39,3 @@ def encode_varint(integer: int) -> bytes:
         encoding += encode_int8(n)
         if integer == 0:
             return encoding
-
-
-def encode_uuid(uuid: uuid.UUID) -> bytes:
-    return uuid.bytes
-
-
-def encode_compact_array(array: list) -> bytes:
-    return encode_varint(len(array) + 1) + b"".join(item.encode() for item in array)
-
-
-def encode_tagged_fields() -> bytes:
-    return b"\x00"

@@ -1,31 +1,23 @@
 import asyncio
 
-from .protocol import KafkaRequest, KafkaResponse
+from .request import KafkaRequest
+from .response import KafkaResponse
 
 
 class KafkaServer:
-    def __init__(self, host="localhost", port=9092) -> None:
-        self._host = host
-        self._port = port
-
     async def start(self) -> None:
-        server = await asyncio.start_server(
-            self._handle_client, self._host, self._port, reuse_port=True
-        )
+        server = await asyncio.start_server(self._handle_client, "localhost", 9092, reuse_port=True)
         async with server:
             await server.serve_forever()
 
-    async def _handle_client(
-        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ) -> None:
+    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         while True:
-            data = await reader.read(8192)
-            if not data:
+            try:
+                request = await KafkaRequest.from_reader(reader)
+            except asyncio.IncompleteReadError:
                 break
 
-            request = KafkaRequest.from_bytes(data)
             response = KafkaResponse.from_request(request)
-
             writer.write(response.encode())
             await writer.drain()
 
