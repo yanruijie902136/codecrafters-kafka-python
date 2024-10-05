@@ -11,6 +11,7 @@ from .encode_functions import encode_int16
 class ApiKey(enum.IntEnum):
     FETCH = 1
     API_VERSIONS = 18
+    DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
     def decode(cls, byte_stream: io.BytesIO) -> ApiKey:

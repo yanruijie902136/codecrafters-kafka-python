@@ -33,6 +33,7 @@ class ApiVersionsResponseBody(KafkaResponseBody):
             api_keys=[
                 ApiKeyItem(api_key=ApiKey.FETCH, min_version=0, max_version=16),
                 ApiKeyItem(api_key=ApiKey.API_VERSIONS, min_version=0, max_version=4),
+                ApiKeyItem(api_key=ApiKey.DESCRIBE_TOPIC_PARTITIONS, min_version=0, max_version=0),
             ],
             throttle_time_ms=0,
         )
