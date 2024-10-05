@@ -1,8 +1,30 @@
 import uuid
+from typing import Any, Callable, Optional
 
 
-def encode_compact_array(array: list) -> bytes:
-    return encode_varint(len(array) + 1) + b"".join(item.encode() for item in array)
+EncodeFunction = Callable[[Any], bytes]
+
+
+def encode_boolean(boolean: bool) -> bytes:
+    return int(boolean).to_bytes(1)
+
+
+def encode_compact_array(array: list, encode_function: Optional[EncodeFunction] = None) -> bytes:
+    encoded_items = b"".join(
+        item.encode() if encode_function is None else encode_function(item)
+        for item in array
+    )
+    return encode_varint(len(array) + 1) + encoded_items
+
+
+def encode_compact_nullable_string(string: str) -> bytes:
+    if not string:
+        return encode_varint(0)
+    return encode_varint(len(string) + 1) + string.encode()
+
+
+def encode_compact_string(string: str) -> bytes:
+    return encode_varint(len(string) + 1) + string.encode()
 
 
 def encode_int8(integer: int) -> bytes:

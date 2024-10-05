@@ -56,5 +56,8 @@ class KafkaRequest:
             case ApiKey.API_VERSIONS:
                 from .api_versions import ApiVersionsRequestBody
                 body = ApiVersionsRequestBody.decode(byte_stream)
+            case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
+                from .describe_topic_partitions import DescribeTopicPartitionsRequestBody
+                body = DescribeTopicPartitionsRequestBody.decode(byte_stream)
 
         return KafkaRequest(header, body)
