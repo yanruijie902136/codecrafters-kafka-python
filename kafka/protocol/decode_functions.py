@@ -62,6 +62,16 @@ def decode_nullable_string(byte_stream: io.BufferedIOBase) -> str:
     return "" if n < 0 else byte_stream.read(n).decode()
 
 
+def decode_compact_bytes(byte_stream: io.BufferedIOBase) -> bytes:
+    n = decode_varint(byte_stream) - 1
+    return byte_stream.read(n)
+
+
+def decode_array(byte_stream: io.BufferedIOBase, decode_function: DecodeFunction) -> list:
+    n = decode_int32(byte_stream)
+    return [] if n < 0 else [decode_function(byte_stream) for _ in range(n)]
+
+
 def decode_compact_array(byte_stream: io.BufferedIOBase, decode_function: DecodeFunction) -> list:
     n = decode_varint(byte_stream) - 1
     return [decode_function(byte_stream) for _ in range(n)]

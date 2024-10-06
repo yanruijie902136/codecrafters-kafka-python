@@ -90,7 +90,7 @@ class PartitionStruct:
             encode_int64(self.log_start_offset),
             encode_compact_array(self.aborted_transactions),
             encode_int32(self.preferred_read_replica),
-            encode_tagged_fields(),  # FIXME: Use a null byte for COMPACT_RECORDS for now.
+            encode_compact_array([]),
             encode_tagged_fields(),
         ])
 

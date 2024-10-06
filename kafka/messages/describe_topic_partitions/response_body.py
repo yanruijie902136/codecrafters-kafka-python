@@ -12,6 +12,7 @@ from ...protocol import (
     encode_tagged_fields,
     encode_uuid,
 )
+from ...records import RecordManager
 
 from ..request import Request
 from ..response import AbstractResponseBody
@@ -28,20 +29,35 @@ class DescribeTopicPartitionsResponseBody(AbstractResponseBody):
     def from_request(cls, request: Request) -> DescribeTopicPartitionsResponseBody:
         assert type(request.body) is DescribeTopicPartitionsRequestBody, "Mismatched request body."
 
-        topics = [
-            TopicStruct(
+        record_manager = RecordManager()
+        topic_name = request.body.topics[0].name
+
+        if (topic_record := record_manager.get_topic(topic_name)) is None:
+            topic_item = TopicStruct(
                 error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
-                name=request.body.topics[0].name,
+                name=topic_name,
                 topic_id=uuid.UUID(int=0),
                 is_internal=False,
                 partitions=[],
                 topic_authorized_operations=0,
-            ),
-        ]
+            )
+        else:
+            topic_id = topic_record.topic_id
+            topic_item = TopicStruct(
+                error_code=ErrorCode.NONE,
+                name=topic_name,
+                topic_id=topic_id,
+                is_internal=False,
+                partitions=[
+                    PartitionStruct(error_code=ErrorCode.NONE, partition_index=partition_record.partition_id)
+                    for partition_record in record_manager.get_partitions(topic_id)
+                ],
+                topic_authorized_operations=0,
+            )
 
         return DescribeTopicPartitionsResponseBody(
             throttle_time_ms=0,
-            topics=topics,
+            topics=[topic_item],
         )
 
     def encode(self) -> bytes:
@@ -78,13 +94,13 @@ class TopicStruct:
 class PartitionStruct:
     error_code: ErrorCode
     partition_index: int
-    leader_id: int
-    leader_epoch: int
-    replica_nodes: list[int]
-    isr_nodes: list[int]
-    eligible_leader_replicas: list[int]
-    last_known_elr: list[int]
-    offline_replicas: list[int]
+    leader_id: int = 0
+    leader_epoch: int = 0
+    replica_nodes: list[int] = dataclasses.field(default_factory=list)
+    isr_nodes: list[int] = dataclasses.field(default_factory=list)
+    eligible_leader_replicas: list[int] = dataclasses.field(default_factory=list)
+    last_known_elr: list[int] = dataclasses.field(default_factory=list)
+    offline_replicas: list[int] = dataclasses.field(default_factory=list)
 
     def encode(self) -> bytes:
         return b"".join([

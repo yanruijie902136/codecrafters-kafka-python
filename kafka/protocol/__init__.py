@@ -1,6 +1,8 @@
 from .api_key import ApiKey
 from .decode_functions import (
+    decode_array,
     decode_compact_array,
+    decode_compact_bytes,
     decode_compact_string,
     decode_int8,
     decode_int16,
@@ -8,8 +10,10 @@ from .decode_functions import (
     decode_int64,
     decode_nullable_string,
     decode_tagged_fields,
+    decode_uint32,
     decode_uuid,
     decode_varint,
+    decode_varlong,
 )
 from .encode_functions import (
     encode_boolean,
