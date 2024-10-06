@@ -4,7 +4,7 @@ import dataclasses
 import io
 import uuid
 
-from ...decode_functions import (
+from ...protocol import (
     decode_compact_array,
     decode_compact_string,
     decode_int8,

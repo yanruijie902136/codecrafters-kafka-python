@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import dataclasses
 
-from ...api_key import ApiKey
-from ...encode_functions import (
+from ...protocol import (
+    ApiKey,
+    ErrorCode,
     encode_compact_array,
     encode_int16,
     encode_int32,
     encode_tagged_fields,
 )
-from ...error_code import ErrorCode
 
 from ..request import Request
 from ..response import AbstractResponseBody

@@ -3,8 +3,7 @@ from __future__ import annotations
 import abc
 import dataclasses
 
-from ..api_key import ApiKey
-from ..encode_functions import encode_int32, encode_tagged_fields
+from ..protocol import ApiKey, encode_int32, encode_tagged_fields
 
 from .request import Request, RequestHeader
 

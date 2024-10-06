@@ -3,7 +3,8 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
-from ...encode_functions import (
+from ...protocol import (
+    ErrorCode,
     encode_boolean,
     encode_compact_array,
     encode_compact_nullable_string,
@@ -11,7 +12,6 @@ from ...encode_functions import (
     encode_tagged_fields,
     encode_uuid,
 )
-from ...error_code import ErrorCode
 
 from ..request import Request
 from ..response import AbstractResponseBody

@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ...decode_functions import decode_compact_string, decode_tagged_fields
+from ...protocol import decode_compact_string, decode_tagged_fields
 
 from ..request import AbstractRequestBody
 

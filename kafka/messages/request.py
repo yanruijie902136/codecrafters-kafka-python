@@ -5,8 +5,8 @@ import asyncio
 import dataclasses
 import io
 
-from ..api_key import ApiKey
-from ..decode_functions import (
+from ..protocol import (
+    ApiKey,
     decode_int16,
     decode_int32,
     decode_nullable_string,
