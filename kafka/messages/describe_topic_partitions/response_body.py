@@ -43,15 +43,18 @@ class DescribeTopicPartitionsResponseBody(AbstractResponseBody):
             )
         else:
             topic_id = topic_record.topic_id
+            partitions = [
+                PartitionStruct(error_code=ErrorCode.NONE, partition_index=partition_record.partition_id)
+                for partition_record in record_manager.get_partitions(topic_id)
+            ]
+            partitions.sort(key=lambda p: p.partition_index)
+
             topic_item = TopicStruct(
                 error_code=ErrorCode.NONE,
                 name=topic_name,
                 topic_id=topic_id,
                 is_internal=False,
-                partitions=[
-                    PartitionStruct(error_code=ErrorCode.NONE, partition_index=partition_record.partition_id)
-                    for partition_record in record_manager.get_partitions(topic_id)
-                ],
+                partitions=partitions,
                 topic_authorized_operations=0,
             )
 
