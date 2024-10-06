@@ -4,7 +4,7 @@ import dataclasses
 import io
 import uuid
 
-from ..decode_functions import (
+from ...decode_functions import (
     decode_compact_array,
     decode_compact_string,
     decode_int8,
@@ -13,19 +13,20 @@ from ..decode_functions import (
     decode_tagged_fields,
     decode_uuid,
 )
-from ..request import KafkaRequestBody
+
+from ..request import AbstractRequestBody
 
 
 @dataclasses.dataclass
-class FetchRequestBody(KafkaRequestBody):
+class FetchRequestBody(AbstractRequestBody):
     max_wait_ms: int
     min_bytes: int
     max_bytes: int
     isolation_level: int
     session_id: int
     session_epoch: int
-    topics: list[TopicItem]
-    forgotten_topics_data: list[ForgottenTopicItem]
+    topics: list[TopicStruct]
+    forgotten_topics_data: list[ForgottenTopicStruct]
     rack_id: str
 
     @classmethod
@@ -37,8 +38,8 @@ class FetchRequestBody(KafkaRequestBody):
             isolation_level=decode_int8(byte_stream),
             session_id=decode_int32(byte_stream),
             session_epoch=decode_int32(byte_stream),
-            topics=decode_compact_array(byte_stream, TopicItem.decode),
-            forgotten_topics_data=decode_compact_array(byte_stream, ForgottenTopicItem.decode),
+            topics=decode_compact_array(byte_stream, TopicStruct.decode),
+            forgotten_topics_data=decode_compact_array(byte_stream, ForgottenTopicStruct.decode),
             rack_id=decode_compact_string(byte_stream),
         )
         decode_tagged_fields(byte_stream)
@@ -46,22 +47,22 @@ class FetchRequestBody(KafkaRequestBody):
 
 
 @dataclasses.dataclass
-class TopicItem:
+class TopicStruct:
     topic_id: uuid.UUID
-    partitions: list[PartitionItem]
+    partitions: list[PartitionStruct]
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> TopicItem:
-        item = TopicItem(
+    def decode(cls, byte_stream: io.BytesIO) -> TopicStruct:
+        item = TopicStruct(
             topic_id=decode_uuid(byte_stream),
-            partitions=decode_compact_array(byte_stream, PartitionItem.decode),
+            partitions=decode_compact_array(byte_stream, PartitionStruct.decode),
         )
         decode_tagged_fields(byte_stream)
         return item
 
 
 @dataclasses.dataclass
-class PartitionItem:
+class PartitionStruct:
     partition: int
     current_leader_epoch: int
     fetch_offset: int
@@ -70,8 +71,8 @@ class PartitionItem:
     partition_max_bytes: int
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> PartitionItem:
-        item = PartitionItem(
+    def decode(cls, byte_stream: io.BytesIO) -> PartitionStruct:
+        item = PartitionStruct(
             partition=decode_int32(byte_stream),
             current_leader_epoch=decode_int32(byte_stream),
             fetch_offset=decode_int64(byte_stream),
@@ -84,13 +85,13 @@ class PartitionItem:
 
 
 @dataclasses.dataclass
-class ForgottenTopicItem:
+class ForgottenTopicStruct:
     topic_id: uuid.UUID
     partitions: list[int]
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> ForgottenTopicItem:
-        item = ForgottenTopicItem(
+    def decode(cls, byte_stream: io.BytesIO) -> ForgottenTopicStruct:
+        item = ForgottenTopicStruct(
             topic_id=decode_uuid(byte_stream),
             partitions=decode_compact_array(byte_stream, decode_int32),
         )

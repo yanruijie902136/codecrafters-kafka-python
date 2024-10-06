@@ -3,35 +3,33 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
-from ..api_key import ApiKey
-from .cursor import Cursor
-from ..encode_functions import (
+from ...encode_functions import (
     encode_boolean,
     encode_compact_array,
     encode_compact_nullable_string,
-    encode_int16,
     encode_int32,
     encode_tagged_fields,
     encode_uuid,
 )
-from ..error_code import ErrorCode
-from ..request import KafkaRequest
+from ...error_code import ErrorCode
+
+from ..request import Request
+from ..response import AbstractResponseBody
+
 from .request_body import DescribeTopicPartitionsRequestBody
-from ..response import KafkaResponseBody
 
 
 @dataclasses.dataclass
-class DescribeTopicPartitionsResponseBody(KafkaResponseBody):
+class DescribeTopicPartitionsResponseBody(AbstractResponseBody):
     throttle_time_ms: int
-    topics: list[TopicItem]
-    next_cursor: Cursor
+    topics: list[TopicStruct]
 
     @classmethod
-    def from_request(cls, request: KafkaRequest) -> DescribeTopicPartitionsResponseBody:
+    def from_request(cls, request: Request) -> DescribeTopicPartitionsResponseBody:
         assert type(request.body) is DescribeTopicPartitionsRequestBody, "Mismatched request body."
 
         topics = [
-            TopicItem(
+            TopicStruct(
                 error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
                 name=request.body.topics[0].name,
                 topic_id=uuid.UUID(int=0),
@@ -44,25 +42,24 @@ class DescribeTopicPartitionsResponseBody(KafkaResponseBody):
         return DescribeTopicPartitionsResponseBody(
             throttle_time_ms=0,
             topics=topics,
-            next_cursor=request.body.cursor,
         )
 
     def encode(self) -> bytes:
         return b"".join([
             encode_int32(self.throttle_time_ms),
             encode_compact_array(self.topics),
-            self.next_cursor.encode(),
+            b"\xff",    # FIXME: Only support null cursor (a 0xff byte) for now.
             encode_tagged_fields(),
         ])
 
 
 @dataclasses.dataclass
-class TopicItem:
+class TopicStruct:
     error_code: ErrorCode
     name: str
     topic_id: uuid.UUID
     is_internal: bool
-    partitions: list[PartitionItem]
+    partitions: list[PartitionStruct]
     topic_authorized_operations: int
 
     def encode(self) -> bytes:
@@ -78,7 +75,7 @@ class TopicItem:
 
 
 @dataclasses.dataclass
-class PartitionItem:
+class PartitionStruct:
     error_code: ErrorCode
     partition_index: int
     leader_id: int

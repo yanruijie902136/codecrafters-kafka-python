@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 
-from .request import KafkaRequest
-from .response import KafkaResponse
+from .messages import Request, Response
 
 
 class KafkaServer:
@@ -13,11 +14,11 @@ class KafkaServer:
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         while True:
             try:
-                request = await KafkaRequest.from_reader(reader)
+                request = await Request.from_stream_reader(reader)
             except asyncio.IncompleteReadError:
                 break
 
-            response = KafkaResponse.from_request(request)
+            response = Response.from_request(request)
             writer.write(response.encode())
             await writer.drain()
 

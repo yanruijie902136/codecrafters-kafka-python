@@ -3,38 +3,40 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
-from ..encode_functions import (
+from ...encode_functions import (
     encode_compact_array,
     encode_int32,
     encode_int64,
     encode_tagged_fields,
     encode_uuid,
 )
-from ..error_code import ErrorCode
-from ..request import KafkaRequest
+from ...error_code import ErrorCode
+
+from ..request import Request
+from ..response import AbstractResponseBody
+
 from .request_body import FetchRequestBody
-from ..response import KafkaResponseBody
 
 
 @dataclasses.dataclass
-class FetchResponseBody(KafkaResponseBody):
+class FetchResponseBody(AbstractResponseBody):
     throttle_time_ms: int
     error_code: ErrorCode
     session_id: int
-    responses: list[ResponseItem]
+    responses: list[ResponseStruct]
 
     @classmethod
-    def from_request(cls, request: KafkaRequest) -> FetchResponseBody:
+    def from_request(cls, request: Request) -> FetchResponseBody:
         assert type(request.body) is FetchRequestBody, "Mismatched request body."
 
         if not request.body.topics:
             responses = []
         else:
             topic_item = request.body.topics[0]
-            response_item = ResponseItem(
+            response_item = ResponseStruct(
                 topic_id=topic_item.topic_id,
                 partitions=[
-                    PartitionItem(partition_index=0, error_code=ErrorCode.UNKNOWN_TOPIC_ID),
+                    PartitionStruct(partition_index=0, error_code=ErrorCode.UNKNOWN_TOPIC_ID),
                 ],
             )
             responses = [response_item]
@@ -57,9 +59,9 @@ class FetchResponseBody(KafkaResponseBody):
 
 
 @dataclasses.dataclass
-class ResponseItem:
+class ResponseStruct:
     topic_id: uuid.UUID
-    partitions: list[PartitionItem]
+    partitions: list[PartitionStruct]
 
     def encode(self) -> bytes:
         return b"".join([
@@ -70,13 +72,13 @@ class ResponseItem:
 
 
 @dataclasses.dataclass
-class PartitionItem:
+class PartitionStruct:
     partition_index: int
     error_code: ErrorCode
     high_watermark: int = 0
     last_stable_offset: int = 0
     log_start_offset: int = 0
-    aborted_transactions: list[AbortedTransactionItem] = dataclasses.field(default_factory=list)
+    aborted_transactions: list[AbortedTransactionStruct] = dataclasses.field(default_factory=list)
     preferred_read_replica: int = 0
 
     def encode(self) -> bytes:
@@ -94,7 +96,7 @@ class PartitionItem:
 
 
 @dataclasses.dataclass
-class AbortedTransactionItem:
+class AbortedTransactionStruct:
     producer_id: int
     first_offset: int
 

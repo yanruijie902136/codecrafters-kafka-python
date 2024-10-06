@@ -3,12 +3,13 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ..decode_functions import decode_compact_string, decode_tagged_fields
-from ..request import KafkaRequestBody
+from ...decode_functions import decode_compact_string, decode_tagged_fields
+
+from ..request import AbstractRequestBody
 
 
 @dataclasses.dataclass
-class ApiVersionsRequestBody(KafkaRequestBody):
+class ApiVersionsRequestBody(AbstractRequestBody):
     client_software_name: str
     client_software_version: str
 

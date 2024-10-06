@@ -2,24 +2,29 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..api_key import ApiKey
-from ..encode_functions import (
-    encode_compact_array, encode_int16, encode_int32, encode_tagged_fields
+from ...api_key import ApiKey
+from ...encode_functions import (
+    encode_compact_array,
+    encode_int16,
+    encode_int32,
+    encode_tagged_fields,
 )
-from ..error_code import ErrorCode
-from ..request import KafkaRequest
+from ...error_code import ErrorCode
+
+from ..request import Request
+from ..response import AbstractResponseBody
+
 from .request_body import ApiVersionsRequestBody
-from ..response import KafkaResponseBody
 
 
 @dataclasses.dataclass
-class ApiVersionsResponseBody(KafkaResponseBody):
+class ApiVersionsResponseBody(AbstractResponseBody):
     error_code: ErrorCode
-    api_keys: list[ApiKeyItem]
+    api_keys: list[ApiKeyStruct]
     throttle_time_ms: int
 
     @classmethod
-    def from_request(cls, request: KafkaRequest) -> ApiVersionsResponseBody:
+    def from_request(cls, request: Request) -> ApiVersionsResponseBody:
         assert type(request.body) is ApiVersionsRequestBody, "Mismatched request body."
 
         VALID_API_VERSIONS = [0, 1, 2, 3, 4]
@@ -31,9 +36,9 @@ class ApiVersionsResponseBody(KafkaResponseBody):
         return ApiVersionsResponseBody(
             error_code=error_code,
             api_keys=[
-                ApiKeyItem(api_key=ApiKey.FETCH, min_version=0, max_version=16),
-                ApiKeyItem(api_key=ApiKey.API_VERSIONS, min_version=0, max_version=4),
-                ApiKeyItem(api_key=ApiKey.DESCRIBE_TOPIC_PARTITIONS, min_version=0, max_version=0),
+                ApiKeyStruct(api_key=ApiKey.FETCH, min_version=0, max_version=16),
+                ApiKeyStruct(api_key=ApiKey.API_VERSIONS, min_version=0, max_version=4),
+                ApiKeyStruct(api_key=ApiKey.DESCRIBE_TOPIC_PARTITIONS, min_version=0, max_version=0),
             ],
             throttle_time_ms=0,
         )
@@ -48,7 +53,7 @@ class ApiVersionsResponseBody(KafkaResponseBody):
 
 
 @dataclasses.dataclass
-class ApiKeyItem:
+class ApiKeyStruct:
     api_key: ApiKey
     min_version: int
     max_version: int
