@@ -14,10 +14,9 @@ from ...protocol import (
 )
 from ...records import RecordManager
 
+from ..abstract_response_body import AbstractResponseBody
+from .describe_topic_partitions_request_body import DescribeTopicPartitionsRequestBody
 from ..request import Request
-from ..response import AbstractResponseBody
-
-from .request_body import DescribeTopicPartitionsRequestBody
 
 
 @dataclasses.dataclass
@@ -68,7 +67,7 @@ class DescribeTopicPartitionsResponseBody(AbstractResponseBody):
         return b"".join([
             encode_int32(self.throttle_time_ms),
             encode_compact_array(self.topics),
-            b"\xff",    # FIXME: Only support null cursor (a 0xff byte) for now.
+            b"\xff",
             encode_tagged_fields(),
         ])
 

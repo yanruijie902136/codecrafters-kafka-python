@@ -10,7 +10,7 @@ from ...protocol import (
     decode_tagged_fields,
 )
 
-from ..request import AbstractRequestBody
+from ..abstract_request_body import AbstractRequestBody
 
 
 @dataclasses.dataclass
@@ -19,14 +19,16 @@ class DescribeTopicPartitionsRequestBody(AbstractRequestBody):
     response_partition_limit: int
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> DescribeTopicPartitionsRequestBody:
-        body = DescribeTopicPartitionsRequestBody(
+    def decode(cls, byte_stream: io.BufferedIOBase) -> DescribeTopicPartitionsRequestBody:
+        request_body = DescribeTopicPartitionsRequestBody(
             topics=decode_compact_array(byte_stream, TopicStruct.decode),
             response_partition_limit=decode_int32(byte_stream),
         )
+
         assert byte_stream.read(1) == b"\xff", "Only null cursor is supported."
+
         decode_tagged_fields(byte_stream)
-        return body
+        return request_body
 
 
 @dataclasses.dataclass
@@ -34,9 +36,7 @@ class TopicStruct:
     name: str
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> TopicStruct:
-        item = TopicStruct(
-            name=decode_compact_string(byte_stream),
-        )
+    def decode(cls, byte_stream: io.BufferedIOBase) -> TopicStruct:
+        item = TopicStruct(name=decode_compact_string(byte_stream))
         decode_tagged_fields(byte_stream)
         return item

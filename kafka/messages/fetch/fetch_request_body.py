@@ -14,7 +14,7 @@ from ...protocol import (
     decode_uuid,
 )
 
-from ..request import AbstractRequestBody
+from ..abstract_request_body import AbstractRequestBody
 
 
 @dataclasses.dataclass
@@ -30,8 +30,8 @@ class FetchRequestBody(AbstractRequestBody):
     rack_id: str
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> FetchRequestBody:
-        body = FetchRequestBody(
+    def decode(cls, byte_stream: io.BufferedIOBase) -> FetchRequestBody:
+        request_body = FetchRequestBody(
             max_wait_ms=decode_int32(byte_stream),
             min_bytes=decode_int32(byte_stream),
             max_bytes=decode_int32(byte_stream),
@@ -43,7 +43,7 @@ class FetchRequestBody(AbstractRequestBody):
             rack_id=decode_compact_string(byte_stream),
         )
         decode_tagged_fields(byte_stream)
-        return body
+        return request_body
 
 
 @dataclasses.dataclass
@@ -52,7 +52,7 @@ class TopicStruct:
     partitions: list[PartitionStruct]
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> TopicStruct:
+    def decode(cls, byte_stream: io.BufferedIOBase) -> TopicStruct:
         item = TopicStruct(
             topic_id=decode_uuid(byte_stream),
             partitions=decode_compact_array(byte_stream, PartitionStruct.decode),
@@ -71,7 +71,7 @@ class PartitionStruct:
     partition_max_bytes: int
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> PartitionStruct:
+    def decode(cls, byte_stream: io.BufferedIOBase) -> PartitionStruct:
         item = PartitionStruct(
             partition=decode_int32(byte_stream),
             current_leader_epoch=decode_int32(byte_stream),
@@ -90,7 +90,7 @@ class ForgottenTopicStruct:
     partitions: list[int]
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> ForgottenTopicStruct:
+    def decode(cls, byte_stream: io.BufferedIOBase) -> ForgottenTopicStruct:
         item = ForgottenTopicStruct(
             topic_id=decode_uuid(byte_stream),
             partitions=decode_compact_array(byte_stream, decode_int32),

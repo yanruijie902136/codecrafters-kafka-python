@@ -12,10 +12,9 @@ from ...protocol import (
     encode_uuid,
 )
 
+from ..abstract_response_body import AbstractResponseBody
+from .fetch_request_body import FetchRequestBody
 from ..request import Request
-from ..response import AbstractResponseBody
-
-from .request_body import FetchRequestBody
 
 
 @dataclasses.dataclass

@@ -1,2 +1,2 @@
-from .request_body import ApiVersionsRequestBody
-from .response_body import ApiVersionsResponseBody
+from .api_versions_request_body import ApiVersionsRequestBody
+from .api_versions_response_body import ApiVersionsResponseBody

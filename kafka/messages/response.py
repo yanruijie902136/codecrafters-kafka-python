@@ -1,41 +1,12 @@
 from __future__ import annotations
 
-import abc
 import dataclasses
 
-from ..protocol import ApiKey, encode_int32, encode_tagged_fields
+from ..protocol import ApiKey, encode_int32
 
-from .request import Request, RequestHeader
-
-
-@dataclasses.dataclass
-class ResponseHeader:
-    api_key: ApiKey     # Only used for deciding the header format. This won't be sent.
-    correlation_id: int
-
-    @classmethod
-    def from_request_header(cls, request_header: RequestHeader) -> ResponseHeader:
-        return ResponseHeader(
-            api_key=request_header.api_key,
-            correlation_id=request_header.correlation_id,
-        )
-
-    def encode(self) -> bytes:
-        if self.api_key is ApiKey.API_VERSIONS:
-            # The ApiVersions response uses the v0 format (without TAG_BUFFER).
-            return encode_int32(self.correlation_id)
-        return encode_int32(self.correlation_id) + encode_tagged_fields()
-
-
-class AbstractResponseBody(abc.ABC):
-    @classmethod
-    @abc.abstractmethod
-    def from_request(cls, request: Request) -> AbstractResponseBody:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def encode(self) -> bytes:
-        raise NotImplementedError
+from .abstract_response_body import AbstractResponseBody
+from .request import Request
+from .response_header import ResponseHeader
 
 
 @dataclasses.dataclass

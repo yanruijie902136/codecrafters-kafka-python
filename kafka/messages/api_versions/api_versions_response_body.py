@@ -11,10 +11,9 @@ from ...protocol import (
     encode_tagged_fields,
 )
 
+from ..abstract_response_body import AbstractResponseBody
+from .api_versions_request_body import ApiVersionsRequestBody
 from ..request import Request
-from ..response import AbstractResponseBody
-
-from .request_body import ApiVersionsRequestBody
 
 
 @dataclasses.dataclass
