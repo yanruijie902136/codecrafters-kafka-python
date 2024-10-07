@@ -15,7 +15,7 @@ class ErrorCode(enum.IntEnum):
     UNKNOWN_TOPIC_ID = 100
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> ErrorCode:
+    def decode(cls, byte_stream: io.BufferedIOBase) -> ErrorCode:
         return ErrorCode(decode_int16(byte_stream))
 
     def encode(self) -> bytes:

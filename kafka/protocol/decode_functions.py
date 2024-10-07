@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import uuid
 from typing import Any, Callable
@@ -78,5 +80,6 @@ def decode_compact_array(byte_stream: io.BufferedIOBase, decode_function: Decode
 
 
 def decode_tagged_fields(byte_stream: io.BufferedIOBase) -> None:
-    # There are no tagged fields in this challenge. TAG_BUFFER is always a null byte.
+    # There are no tagged fields in this challenge. In other words, TAG_BUFFER
+    # is always a null byte.
     assert byte_stream.read(1) == b"\x00", "Unexpected tagged fields."

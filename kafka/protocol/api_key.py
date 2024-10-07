@@ -14,7 +14,7 @@ class ApiKey(enum.IntEnum):
     DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
-    def decode(cls, byte_stream: io.BytesIO) -> ApiKey:
+    def decode(cls, byte_stream: io.BufferedIOBase) -> ApiKey:
         return ApiKey(decode_int16(byte_stream))
 
     def encode(self) -> bytes:
