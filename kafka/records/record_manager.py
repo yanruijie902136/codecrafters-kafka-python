@@ -23,14 +23,16 @@ class RecordManager(metaclass=SingletonMeta):
         self._topic_records: list[TopicRecord] = []
         self._partition_records: list[PartitionRecord] = []
 
-        byte_stream = io.open("/tmp/kraft-combined-logs/__cluster_metadata-0/00000000000000000000.log", mode="rb")
-        while byte_stream.peek():
-            record_batch = RecordBatch.decode(byte_stream)
-            for record in record_batch.records:
-                if type(record) is TopicRecord:
-                    self._topic_records.append(record)
-                elif type(record) is PartitionRecord:
-                    self._partition_records.append(record)
+        with io.open(
+            "/tmp/kraft-combined-logs/__cluster_metadata-0/00000000000000000000.log", mode="rb"
+        ) as byte_stream:
+            while byte_stream.peek():
+                record_batch = RecordBatch.decode(byte_stream)
+                for record in record_batch.records:
+                    if type(record) is TopicRecord:
+                        self._topic_records.append(record)
+                    elif type(record) is PartitionRecord:
+                        self._partition_records.append(record)
 
     def get_topic(self, topic_name: str) -> Optional[TopicRecord]:
         for topic_record in self._topic_records:
