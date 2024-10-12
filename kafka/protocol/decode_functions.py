@@ -1,9 +1,23 @@
-from __future__ import annotations
-
 import io
 import uuid
 from typing import Any, Callable
 
+__all__ = [
+    "decode_int8",
+    "decode_int16",
+    "decode_int32",
+    "decode_int64",
+    "decode_uint32",
+    "decode_varint",
+    "decode_varlong",
+    "decode_uuid",
+    "decode_compact_string",
+    "decode_nullable_string",
+    "decode_compact_bytes",
+    "decode_array",
+    "decode_compact_array",
+    "decode_tagged_fields",
+]
 
 DecodeFunction = Callable[[io.BufferedIOBase], Any]
 
@@ -80,6 +94,5 @@ def decode_compact_array(byte_stream: io.BufferedIOBase, decode_function: Decode
 
 
 def decode_tagged_fields(byte_stream: io.BufferedIOBase) -> None:
-    # There are no tagged fields in this challenge. In other words, TAG_BUFFER
-    # is always a null byte.
+    # There are no tagged fields in this challenge. TAG_BUFFER is always a null byte.
     assert byte_stream.read(1) == b"\x00", "Unexpected tagged fields."

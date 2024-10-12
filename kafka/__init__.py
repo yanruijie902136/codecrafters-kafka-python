@@ -1,1 +1,1 @@
-from .server import KafkaServer
+from .server import Server

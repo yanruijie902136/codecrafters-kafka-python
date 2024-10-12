@@ -1,7 +1,12 @@
 import asyncio
 
-from kafka import KafkaServer
+import kafka
+
+
+def main() -> None:
+    server = kafka.Server()
+    asyncio.run(server.start())
 
 
 if __name__ == "__main__":
-    asyncio.run(KafkaServer().start())
+    main()

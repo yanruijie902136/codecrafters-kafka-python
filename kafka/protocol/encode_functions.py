@@ -1,8 +1,20 @@
-from __future__ import annotations
-
 import uuid
 from typing import Any, Callable, Optional
 
+__all__ = [
+    "encode_boolean",
+    "encode_int8",
+    "encode_int16",
+    "encode_int32",
+    "encode_int64",
+    "encode_varint",
+    "encode_varlong",
+    "encode_uuid",
+    "encode_compact_string",
+    "encode_compact_nullable_string",
+    "encode_compact_array",
+    "encode_tagged_fields",
+]
 
 EncodeFunction = Callable[[Any], bytes]
 
