@@ -4,9 +4,12 @@ import asyncio
 import dataclasses
 import io
 
-from ..protocol import ApiKey
+from ..constants import ApiKey
 
 from .abstract_request_body import AbstractRequestBody
+from .api_versions_request_body import ApiVersionsRequestBody
+from .describe_topic_partitions_request_body import DescribeTopicPartitionsRequestBody
+from .fetch_request_body import FetchRequestBody
 from .request_header import RequestHeader
 
 
@@ -24,13 +27,10 @@ class Request:
 
         match request_header.api_key:
             case ApiKey.FETCH:
-                from .fetch import FetchRequestBody
                 request_body_class = FetchRequestBody
             case ApiKey.API_VERSIONS:
-                from .api_versions import ApiVersionsRequestBody
                 request_body_class = ApiVersionsRequestBody
             case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
-                from .describe_topic_partitions import DescribeTopicPartitionsRequestBody
                 request_body_class = DescribeTopicPartitionsRequestBody
 
         return Request(request_header, request_body_class.decode(byte_stream))

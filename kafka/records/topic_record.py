@@ -4,7 +4,7 @@ import dataclasses
 import io
 import uuid
 
-from ..protocol import decode_compact_string, decode_tagged_fields, decode_uuid
+from ..primitive_types import decode_compact_string, decode_tagged_fields, decode_uuid
 
 from .record import Record
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import io
 
-from ..protocol import (
+from ..primitive_types import (
     decode_compact_bytes,
     decode_int8,
     decode_varint,

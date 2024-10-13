@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
-from ...protocol import (
-    ErrorCode,
+from ..constants import ErrorCode
+from ..primitive_types import (
     encode_boolean,
     encode_compact_array,
     encode_compact_nullable_string,
@@ -12,11 +12,11 @@ from ...protocol import (
     encode_tagged_fields,
     encode_uuid,
 )
-from ...records import RecordManager
+from ..records import RecordManager
 
-from ..abstract_response_body import AbstractResponseBody
+from .abstract_response_body import AbstractResponseBody
 from .describe_topic_partitions_request_body import DescribeTopicPartitionsRequestBody
-from ..request import Request
+from .request import Request
 
 
 @dataclasses.dataclass

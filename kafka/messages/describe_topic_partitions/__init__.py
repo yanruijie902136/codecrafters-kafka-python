@@ -1,2 +1,0 @@
-from .describe_topic_partitions_request_body import DescribeTopicPartitionsRequestBody
-from .describe_topic_partitions_response_body import DescribeTopicPartitionsResponseBody

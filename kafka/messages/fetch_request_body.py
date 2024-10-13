@@ -4,7 +4,7 @@ import dataclasses
 import io
 import uuid
 
-from ...protocol import (
+from ..primitive_types import (
     decode_compact_array,
     decode_compact_string,
     decode_int8,
@@ -14,7 +14,7 @@ from ...protocol import (
     decode_uuid,
 )
 
-from ..abstract_request_body import AbstractRequestBody
+from .abstract_request_body import AbstractRequestBody
 
 
 @dataclasses.dataclass

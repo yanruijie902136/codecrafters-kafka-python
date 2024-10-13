@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..protocol import ApiKey, encode_int32
+from ..constants import ApiKey
+from ..primitive_types import encode_int32
 
 from .abstract_response_body import AbstractResponseBody
+from .api_versions_response_body import ApiVersionsResponseBody
+from .describe_topic_partitions_response_body import DescribeTopicPartitionsResponseBody
+from .fetch_response_body import FetchResponseBody
 from .request import Request
 from .response_header import ResponseHeader
 
@@ -16,20 +20,17 @@ class Response:
 
     @classmethod
     def from_request(cls, request: Request) -> Response:
-        header = ResponseHeader.from_request_header(request.header)
+        response_header = ResponseHeader.from_request_header(request.header)
 
         match request.header.api_key:
             case ApiKey.FETCH:
-                from .fetch import FetchResponseBody
-                body_class = FetchResponseBody
+                response_body_class = FetchResponseBody
             case ApiKey.API_VERSIONS:
-                from .api_versions import ApiVersionsResponseBody
-                body_class = ApiVersionsResponseBody
+                response_body_class = ApiVersionsResponseBody
             case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
-                from .describe_topic_partitions import DescribeTopicPartitionsResponseBody
-                body_class = DescribeTopicPartitionsResponseBody
+                response_body_class = DescribeTopicPartitionsResponseBody
 
-        return Response(header, body_class.from_request(request))
+        return Response(response_header, response_body_class.from_request(request))
 
     def encode(self) -> bytes:
         message = self.header.encode() + self.body.encode()

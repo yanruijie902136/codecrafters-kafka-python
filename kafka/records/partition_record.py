@@ -4,7 +4,7 @@ import dataclasses
 import io
 import uuid
 
-from ..protocol import (
+from ..primitive_types import (
     decode_compact_array,
     decode_int32,
     decode_tagged_fields,

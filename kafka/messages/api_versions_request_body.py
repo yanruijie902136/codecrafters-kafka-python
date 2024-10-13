@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ...protocol import decode_compact_string, decode_tagged_fields
+from ..primitive_types import decode_compact_string, decode_tagged_fields
 
-from ..abstract_request_body import AbstractRequestBody
+from .abstract_request_body import AbstractRequestBody
 
 
 @dataclasses.dataclass

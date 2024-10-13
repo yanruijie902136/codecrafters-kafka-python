@@ -3,14 +3,14 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ...protocol import (
+from ..primitive_types import (
     decode_compact_array,
     decode_compact_string,
     decode_int32,
     decode_tagged_fields,
 )
 
-from ..abstract_request_body import AbstractRequestBody
+from .abstract_request_body import AbstractRequestBody
 
 
 @dataclasses.dataclass
@@ -37,6 +37,8 @@ class TopicStruct:
 
     @classmethod
     def decode(cls, byte_stream: io.BufferedIOBase) -> TopicStruct:
-        item = TopicStruct(name=decode_compact_string(byte_stream))
+        item = TopicStruct(
+            name=decode_compact_string(byte_stream),
+        )
         decode_tagged_fields(byte_stream)
         return item

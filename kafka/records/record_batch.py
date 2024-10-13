@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ..protocol import (
+from ..primitive_types import (
     decode_array,
     decode_int8,
     decode_int16,

@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
-from ...protocol import (
-    ErrorCode,
+from ..constants import ErrorCode
+from ..primitive_types import (
     encode_compact_array,
     encode_int32,
     encode_int64,
@@ -12,9 +12,9 @@ from ...protocol import (
     encode_uuid,
 )
 
-from ..abstract_response_body import AbstractResponseBody
+from .abstract_response_body import AbstractResponseBody
 from .fetch_request_body import FetchRequestBody
-from ..request import Request
+from .request import Request
 
 
 @dataclasses.dataclass

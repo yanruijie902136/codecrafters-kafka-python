@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 import io
 
-from ..protocol import (
-    ApiKey,
+from ..constants import ApiKey
+from ..primitive_types import (
     decode_int16,
     decode_int32,
     decode_nullable_string,
