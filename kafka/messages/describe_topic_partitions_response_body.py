@@ -28,39 +28,9 @@ class DescribeTopicPartitionsResponseBody(AbstractResponseBody):
     def from_request(cls, request: Request) -> DescribeTopicPartitionsResponseBody:
         assert type(request.body) is DescribeTopicPartitionsRequestBody, "Mismatched request body."
 
-        record_manager = RecordManager()
-        topic_responses = []
-        for topic in request.body.topics:
-            if (topic_record := record_manager.get_topic(topic.name)) is None:
-                topic_item = TopicStruct(
-                    error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
-                    name=topic.name,
-                    topic_id=uuid.UUID(int=0),
-                    is_internal=False,
-                    partitions=[],
-                    topic_authorized_operations=0,
-                )
-            else:
-                topic_id = topic_record.topic_id
-                partitions = [
-                    PartitionStruct(error_code=ErrorCode.NONE, partition_index=partition_record.partition_id)
-                    for partition_record in record_manager.get_partitions(topic_id)
-                ]
-                partitions.sort(key=lambda p: p.partition_index)
-
-                topic_item = TopicStruct(
-                    error_code=ErrorCode.NONE,
-                    name=topic.name,
-                    topic_id=topic_id,
-                    is_internal=False,
-                    partitions=partitions,
-                    topic_authorized_operations=0,
-                )
-            topic_responses.append(topic_item)
-
         return DescribeTopicPartitionsResponseBody(
             throttle_time_ms=0,
-            topics=topic_responses,
+            topics=[TopicStruct.from_topic_name(topic.name) for topic in request.body.topics],
         )
 
     def encode(self) -> bytes:
@@ -80,6 +50,36 @@ class TopicStruct:
     is_internal: bool
     partitions: list[PartitionStruct]
     topic_authorized_operations: int
+
+    @classmethod
+    def from_topic_name(cls, topic_name: str) -> TopicStruct:
+        record_manager = RecordManager()
+        topic_record = record_manager.get_topic(topic_name)
+        if topic_record is None:
+            return TopicStruct(
+                error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
+                name=topic_name,
+                topic_id=uuid.UUID(int=0),
+                is_internal=False,
+                partitions=[],
+                topic_authorized_operations=0,
+            )
+
+        topic_id = topic_record.topic_id
+        partitions = [
+            PartitionStruct(error_code=ErrorCode.NONE, partition_index=partition_record.partition_id)
+            for partition_record in record_manager.get_partitions(topic_id)
+        ]
+        partitions.sort(key=lambda p: p.partition_index)
+
+        return TopicStruct(
+            error_code=ErrorCode.NONE,
+            name=topic_name,
+            topic_id=topic_id,
+            is_internal=False,
+            partitions=partitions,
+            topic_authorized_operations=0,
+        )
 
     def encode(self) -> bytes:
         return b"".join([
