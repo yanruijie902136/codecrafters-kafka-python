@@ -54,20 +54,6 @@ class ResponseStruct:
     @classmethod
     def from_topic_id(cls, topic_id: uuid.UUID) -> ResponseStruct:
         record_manager = RecordManager()
-        response = ResponseStruct(
-            topic_id=topic_id,
-            partitions=[
-                PartitionStruct(
-                    partition_index=partition_record.partition_id,
-                    error_code=ErrorCode.NONE,
-                )
-                for partition_record in record_manager.get_partitions(topic_id)
-            ],
-        )
-        if response.partitions:
-            return response
-
-        # The topic is either empty or unknown.
         if record_manager.has_topic(topic_id):
             error_code = ErrorCode.NONE
         else:
