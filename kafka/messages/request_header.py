@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import dataclasses
-import io
 
 from ..constants import ApiKey
 from ..primitive_types import (
+    BinaryStream,
     decode_int16,
     decode_int32,
     decode_nullable_string,
@@ -20,12 +18,12 @@ class RequestHeader:
     client_id: str
 
     @classmethod
-    def decode(cls, byte_stream: io.BufferedIOBase) -> RequestHeader:
+    def decode(cls, binary_stream: BinaryStream):
         request_header = RequestHeader(
-            api_key=ApiKey.decode(byte_stream),
-            api_version=decode_int16(byte_stream),
-            correlation_id=decode_int32(byte_stream),
-            client_id=decode_nullable_string(byte_stream),
+            api_key=ApiKey.decode(binary_stream),
+            api_version=decode_int16(binary_stream),
+            correlation_id=decode_int32(binary_stream),
+            client_id=decode_nullable_string(binary_stream),
         )
-        decode_tagged_fields(byte_stream)
+        decode_tagged_fields(binary_stream)
         return request_header

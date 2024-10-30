@@ -1,9 +1,6 @@
-from __future__ import annotations
-
 import enum
-import io
 
-from .primitive_types import decode_int16, encode_int16
+from .primitive_types import BinaryStream, decode_int16, encode_int16
 
 
 @enum.unique
@@ -13,10 +10,10 @@ class ApiKey(enum.IntEnum):
     DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
-    def decode(cls, byte_stream: io.BufferedIOBase) -> ApiKey:
-        return ApiKey(decode_int16(byte_stream))
+    def decode(cls, binary_stream: BinaryStream):
+        return ApiKey(decode_int16(binary_stream))
 
-    def encode(self) -> bytes:
+    def encode(self):
         return encode_int16(self)
 
 
@@ -27,5 +24,9 @@ class ErrorCode(enum.IntEnum):
     UNSUPPORTED_VERSION = 35
     UNKNOWN_TOPIC_ID = 100
 
-    def encode(self) -> bytes:
+    @classmethod
+    def decode(cls, binary_stream: BinaryStream):
+        return ErrorCode(decode_int16(binary_stream))
+
+    def encode(self):
         return encode_int16(self)

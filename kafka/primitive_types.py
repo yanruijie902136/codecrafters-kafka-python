@@ -1,60 +1,67 @@
 import io
+import struct
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
-DecodeFunction = Callable[[io.BufferedIOBase], Any]
+
+BinaryStream = io.BufferedReader | io.BytesIO
+DecodeFunction = Callable[[BinaryStream], Any]
 EncodeFunction = Callable[[Any], bytes]
 
 
-def encode_boolean(boolean: bool) -> bytes:
-    return int(boolean).to_bytes(1)
+def decode_boolean(binary_stream: BinaryStream):
+    return bool.from_bytes(binary_stream.read(1))
 
 
-def decode_int8(byte_stream: io.BufferedIOBase) -> int:
-    return int.from_bytes(byte_stream.read(1), signed=True)
+def encode_boolean(boolean: bool):
+    return boolean.to_bytes(1)
 
 
-def encode_int8(integer: int) -> bytes:
+def decode_int8(binary_stream: BinaryStream):
+    return int.from_bytes(binary_stream.read(1), signed=True)
+
+
+def encode_int8(integer: int):
     return integer.to_bytes(1, signed=True)
 
 
-def decode_int16(byte_stream: io.BufferedIOBase) -> int:
-    return int.from_bytes(byte_stream.read(2), signed=True)
+def decode_int16(binary_stream: BinaryStream):
+    return int.from_bytes(binary_stream.read(2), signed=True)
 
 
-def encode_int16(integer: int) -> bytes:
+def encode_int16(integer: int):
     return integer.to_bytes(2, signed=True)
 
 
-def decode_int32(byte_stream: io.BufferedIOBase) -> int:
-    return int.from_bytes(byte_stream.read(4), signed=True)
+def decode_int32(binary_stream: BinaryStream):
+    return int.from_bytes(binary_stream.read(4), signed=True)
 
 
-def encode_int32(integer: int) -> bytes:
+def encode_int32(integer: int):
     return integer.to_bytes(4, signed=True)
 
 
-def decode_int64(byte_stream: io.BufferedIOBase) -> int:
-    return int.from_bytes(byte_stream.read(8), signed=True)
+def decode_int64(binary_stream: BinaryStream):
+    return int.from_bytes(binary_stream.read(8), signed=True)
 
 
-def encode_int64(integer: int) -> bytes:
+def encode_int64(integer: int):
     return integer.to_bytes(8, signed=True)
 
 
-def decode_uint32(byte_stream: io.BufferedIOBase) -> int:
-    return int.from_bytes(byte_stream.read(4))
+def decode_uint32(binary_stream: BinaryStream):
+    return int.from_bytes(binary_stream.read(4))
 
 
-def encode_uint32(integer: int) -> bytes:
-    return integer.to_bytes(4, signed=False)
+def encode_uint32(integer: int):
+    return integer.to_bytes(4)
 
 
-def decode_varint(byte_stream: io.BufferedIOBase, signed=False) -> int:
+def decode_varint(binary_stream: BinaryStream, signed=False):
     BASE = 128
     integer, multiplier = 0, 1
     while True:
-        continuation, n = divmod(int.from_bytes(byte_stream.read(1)), BASE)
+        continuation, n = divmod(int.from_bytes(binary_stream.read(1)), BASE)
         integer += n * multiplier
         if not continuation:
             break
@@ -65,7 +72,7 @@ def decode_varint(byte_stream: io.BufferedIOBase, signed=False) -> int:
     return integer
 
 
-def encode_varint(integer: int) -> bytes:
+def encode_varint(integer: int):
     if integer < 0:
         integer += 1 << 32
 
@@ -80,74 +87,146 @@ def encode_varint(integer: int) -> bytes:
             return encoding
 
 
-def decode_varlong(byte_stream: io.BufferedIOBase, signed=False) -> int:
-    integer = decode_varint(byte_stream)
+def decode_varlong(binary_stream: BinaryStream, signed=False):
+    integer = decode_varint(binary_stream)
     if signed and integer >= (1 << 63):
         integer -= 1 << 64
     return integer
 
 
-def encode_varlong(integer: int) -> bytes:
+def encode_varlong(integer: int):
     if integer < 0:
         integer += 1 << 64
     return encode_varint(integer)
 
 
-def decode_uuid(byte_stream: io.BufferedIOBase) -> uuid.UUID:
-    return uuid.UUID(bytes=byte_stream.read(16))
+def decode_uuid(binary_stream: BinaryStream):
+    return uuid.UUID(bytes=binary_stream.read(16))
 
 
-def encode_uuid(uuid: uuid.UUID) -> bytes:
-    return uuid.bytes
+def encode_uuid(u: uuid.UUID):
+    return u.bytes
 
 
-def decode_compact_string(byte_stream: io.BufferedIOBase) -> str:
-    n = decode_varint(byte_stream) - 1
-    return byte_stream.read(n).decode()
+def decode_float64(binary_stream: BinaryStream):
+    return struct.unpack("f", binary_stream.read(8))[0]
 
 
-def encode_compact_string(string: str) -> bytes:
+def encode_float64(number: float):
+    return struct.pack("f", number)
+
+
+def decode_string(binary_stream: BinaryStream):
+    n = decode_int16(binary_stream)
+    return binary_stream.read(n).decode()
+
+
+def encode_string(string: str):
+    return encode_int16(len(string)) + string.encode()
+
+
+def decode_compact_string(binary_stream: BinaryStream):
+    n = decode_varint(binary_stream) - 1
+    return binary_stream.read(n).decode()
+
+
+def encode_compact_string(string: str):
     return encode_varint(len(string) + 1) + string.encode()
 
 
-def decode_nullable_string(byte_stream: io.BufferedIOBase) -> str:
-    n = decode_int16(byte_stream)
-    return "" if n < 0 else byte_stream.read(n).decode()
+def decode_nullable_string(binary_stream: BinaryStream):
+    n = decode_int16(binary_stream)
+    return None if n < 0 else binary_stream.read(n).decode()
 
 
-def encode_compact_nullable_string(string: str) -> bytes:
-    if not string:
+def encode_nullable_string(string: str | None):
+    if string is None:
+        return encode_int16(-1)
+    return encode_int16(len(string)) + string.encode()
+
+
+def decode_compact_nullable_string(binary_stream: BinaryStream):
+    n = decode_varint(binary_stream) - 1
+    return None if n < 0 else binary_stream.read(n).decode()
+
+
+def encode_compact_nullable_string(string: str | None):
+    if string is None:
         return encode_varint(0)
     return encode_varint(len(string) + 1) + string.encode()
 
 
-def decode_compact_bytes(byte_stream: io.BufferedIOBase) -> bytes:
-    n = decode_varint(byte_stream) - 1
-    return byte_stream.read(n)
+def decode_bytes(binary_stream: BinaryStream):
+    n = decode_int32(binary_stream)
+    return binary_stream.read(n)
 
 
-def decode_array(byte_stream: io.BufferedIOBase, decode_function: DecodeFunction) -> list:
-    n = decode_int32(byte_stream)
-    return [] if n < 0 else [decode_function(byte_stream) for _ in range(n)]
+def encode_bytes(data: bytes):
+    return encode_int32(len(data)) + data
 
 
-def decode_compact_array(byte_stream: io.BufferedIOBase, decode_function: DecodeFunction) -> list:
-    n = decode_varint(byte_stream) - 1
-    return [decode_function(byte_stream) for _ in range(n)]
+def decode_compact_bytes(binary_stream: BinaryStream):
+    n = decode_varint(binary_stream) - 1
+    return binary_stream.read(n)
 
 
-def encode_compact_array(array: list, encode_function: Optional[EncodeFunction] = None) -> bytes:
-    encoded_items = b"".join(
-        item.encode() if encode_function is None else encode_function(item)
-        for item in array
+def encode_compact_bytes(data: bytes):
+    return encode_varint(len(data) + 1) + data
+
+
+def decode_nullable_bytes(binary_stream: BinaryStream):
+    n = decode_int32(binary_stream)
+    return None if n < 0 else binary_stream.read(n)
+
+
+def encode_nullable_bytes(data: bytes | None):
+    if data is None:
+        return encode_int32(-1)
+    return encode_int32(len(data)) + data
+
+
+def decode_compact_nullable_bytes(binary_stream: BinaryStream):
+    n = decode_varint(binary_stream) - 1
+    return None if n < 0 else binary_stream.read(n)
+
+
+def encode_compact_nullable_bytes(data: bytes | None):
+    if data is None:
+        return encode_varint(0)
+    return encode_varint(len(data) + 1) + data
+
+
+def decode_array(binary_stream: BinaryStream, decode_function: DecodeFunction):
+    n = decode_int32(binary_stream)
+    return None if n < 0 else [decode_function(binary_stream) for _ in range(n)]
+
+
+def encode_array(array: list | None, encode_function: EncodeFunction | None = None):
+    if array is None:
+        return encode_int32(-1)
+    encoded_instances = b"".join(
+        instance.encode() if encode_function is None else encode_function(instance) for instance in array
     )
-    return encode_varint(len(array) + 1) + encoded_items
+    return encode_int32(len(array)) + encoded_instances
 
 
-def decode_tagged_fields(byte_stream: io.BufferedIOBase) -> None:
-    # There are no tagged fields in this challenge. TAG_BUFFER is always a null byte.
-    assert byte_stream.read(1) == b"\x00", "Unexpected tagged fields."
+def decode_compact_array(binary_stream: BinaryStream, decode_function: DecodeFunction):
+    n = decode_varint(binary_stream) - 1
+    return None if n < 0 else [decode_function(binary_stream) for _ in range(n)]
 
 
-def encode_tagged_fields() -> bytes:
+def encode_compact_array(array: list | None, encode_function: EncodeFunction | None = None):
+    if array is None:
+        return encode_varint(0)
+    encoded_instances = b"".join(
+        instance.encode() if encode_function is None else encode_function(instance) for instance in array
+    )
+    return encode_varint(len(array) + 1) + encoded_instances
+
+
+def decode_tagged_fields(binary_stream: BinaryStream):
+    assert binary_stream.read(1) == b"\x00", "Unexpected tagged fields."
+
+
+def encode_tagged_fields():
     return b"\x00"
