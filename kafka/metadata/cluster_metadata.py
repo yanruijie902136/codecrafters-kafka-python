@@ -30,7 +30,7 @@ class ClusterMetadata(metaclass=SingletonMeta):
 
         self._partition_indices_lookup: defaultdict[uuid.UUID, list[int]] = defaultdict(list)
 
-        for record_batch in list(read_record_batches("__cluster_metadata", 0)):
+        for record_batch in read_record_batches("__cluster_metadata", 0):
             for record in record_batch.records:
                 self._add_record(record)
 
