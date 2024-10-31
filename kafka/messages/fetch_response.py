@@ -65,9 +65,15 @@ class FetchResponseTopic:
         if topic_name is None:
             return FetchResponseTopic(
                 topic_id=request_topic.topic_id,
-                partitions=[FetchResponsePartition(partition_index=0, error_code=ErrorCode.UNKNOWN_TOPIC_ID)],
+                partitions=[
+                    FetchResponsePartition(
+                        partition_index=0,
+                        error_code=ErrorCode.UNKNOWN_TOPIC_ID,
+                    ),
+                ],
             )
 
+        partition_indices = [p.partition for p in request_topic.partitions]
         return FetchResponseTopic(
             topic_id=request_topic.topic_id,
             partitions=[
@@ -76,7 +82,7 @@ class FetchResponseTopic:
                     error_code=ErrorCode.NONE,
                     records=list(read_record_batches(topic_name, partition_index)),
                 )
-                for partition_index in cluster_metadata.get_partition_indices(request_topic.topic_id)
+                for partition_index in partition_indices
             ],
         )
 
