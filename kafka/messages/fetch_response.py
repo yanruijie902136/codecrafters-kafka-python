@@ -73,16 +73,15 @@ class FetchResponseTopic:
                 ],
             )
 
-        partition_indices = [p.partition for p in request_topic.partitions]
         return FetchResponseTopic(
             topic_id=request_topic.topic_id,
             partitions=[
                 FetchResponsePartition(
-                    partition_index=partition_index,
+                    partition_index=p.partition,
                     error_code=ErrorCode.NONE,
-                    records=list(read_record_batches(topic_name, partition_index)),
+                    records=list(read_record_batches(topic_name, p.partition)),
                 )
-                for partition_index in partition_indices
+                for p in request_topic.partitions
             ],
         )
 
