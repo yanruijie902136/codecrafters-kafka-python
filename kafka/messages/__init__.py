@@ -19,9 +19,9 @@ async def read_request(stream_reader: asyncio.StreamReader):
     n = int.from_bytes(await stream_reader.readexactly(4))
     binary_stream = io.BytesIO(await stream_reader.readexactly(n))
 
-    header = RequestHeader.decode(binary_stream)
+    request_header = RequestHeader.decode(binary_stream)
     request_class: type[AbstractRequest]
-    match header.api_key:
+    match request_header.api_key:
         case ApiKey.FETCH:
             request_class = FetchRequest
         case ApiKey.API_VERSIONS:
@@ -29,13 +29,13 @@ async def read_request(stream_reader: asyncio.StreamReader):
         case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
             request_class = DescribeTopicPartitionsRequest
 
-    return request_class(header, **request_class.decode_body_kwargs(binary_stream))
+    return request_class(request_header, **request_class.decode_body_kwargs(binary_stream))
 
 
 def make_response(request):
-    header = ResponseHeader.from_request_header(request.header)
+    response_header = ResponseHeader.from_request_header(request.header)
     response_class: type[AbstractResponse]
-    match request.header.api_key:
+    match response_header.api_key:
         case ApiKey.FETCH:
             response_class = FetchResponse
         case ApiKey.API_VERSIONS:
@@ -43,4 +43,4 @@ def make_response(request):
         case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
             response_class = DescribeTopicPartitionsResponse
 
-    return response_class(header, **response_class.make_body_kwargs(request))
+    return response_class(response_header, **response_class.make_body_kwargs(request))
