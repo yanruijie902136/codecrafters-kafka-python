@@ -1,6 +1,7 @@
 import dataclasses
+from typing import BinaryIO
 
-from ..primitive_types import BinaryStream, decode_varint, encode_varint
+from ..primitive_types import decode_varint, encode_varint
 
 
 @dataclasses.dataclass
@@ -9,7 +10,7 @@ class RecordHeader:
     value: bytes
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         key_length = decode_varint(binary_stream)
         key = binary_stream.read(key_length).decode()
         value_length = decode_varint(binary_stream)

@@ -1,8 +1,8 @@
 import dataclasses
 import uuid
+from typing import BinaryIO
 
 from ..primitive_types import (
-    BinaryStream,
     decode_compact_array,
     decode_compact_string,
     decode_int8,
@@ -25,7 +25,7 @@ class FetchRequestPartition:
     partition_max_bytes: int
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         item = FetchRequestPartition(
             partition=decode_int32(binary_stream),
             current_leader_epoch=decode_int32(binary_stream),
@@ -44,7 +44,7 @@ class FetchRequestTopic:
     partitions: list[FetchRequestPartition]
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         item = FetchRequestTopic(
             topic_id=decode_uuid(binary_stream),
             partitions=decode_compact_array(binary_stream, FetchRequestPartition.decode),
@@ -59,7 +59,7 @@ class FetchRequestForgottenTopic:
     partitions: list[int]
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         item = FetchRequestForgottenTopic(
             topic_id=decode_uuid(binary_stream),
             partitions=decode_compact_array(binary_stream, decode_int32),
@@ -81,7 +81,7 @@ class FetchRequest(AbstractRequest):
     rack_id: str
 
     @classmethod
-    def decode_body_kwargs(cls, binary_stream: BinaryStream):
+    def decode_body_kwargs(cls, binary_stream: BinaryIO):
         body_kwargs = {
             "max_wait_ms": decode_int32(binary_stream),
             "min_bytes": decode_int32(binary_stream),

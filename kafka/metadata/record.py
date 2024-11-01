@@ -1,7 +1,7 @@
 import dataclasses
+from typing import BinaryIO
 
 from ..primitive_types import (
-    BinaryStream,
     decode_compact_array,
     decode_compact_bytes,
     decode_int8,
@@ -29,7 +29,7 @@ class Record:
     headers: list[RecordHeader]
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         record_kwargs = {
             "length": decode_varint(binary_stream),
             "attributes": decode_int8(binary_stream),

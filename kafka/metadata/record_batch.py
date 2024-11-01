@@ -1,7 +1,7 @@
 import dataclasses
+from typing import BinaryIO
 
 from ..primitive_types import (
-    BinaryStream,
     decode_array,
     decode_int8,
     decode_int16,
@@ -36,7 +36,7 @@ class RecordBatch:
     records: list[Record]
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         return RecordBatch(
             base_offset=decode_int64(binary_stream),
             batch_length=decode_int32(binary_stream),

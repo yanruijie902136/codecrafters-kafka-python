@@ -1,6 +1,7 @@
 import enum
+from typing import BinaryIO
 
-from .primitive_types import BinaryStream, decode_int16, encode_int16
+from .primitive_types import decode_int16, encode_int16
 
 
 @enum.unique
@@ -10,7 +11,7 @@ class ApiKey(enum.IntEnum):
     DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         return ApiKey(decode_int16(binary_stream))
 
     def encode(self):
@@ -25,7 +26,7 @@ class ErrorCode(enum.IntEnum):
     UNKNOWN_TOPIC_ID = 100
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         return ErrorCode(decode_int16(binary_stream))
 
     def encode(self):

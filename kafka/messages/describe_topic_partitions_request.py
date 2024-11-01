@@ -1,7 +1,7 @@
 import dataclasses
+from typing import BinaryIO
 
 from ..primitive_types import (
-    BinaryStream,
     decode_compact_array,
     decode_compact_string,
     decode_int32,
@@ -19,7 +19,7 @@ class DescribeTopicPartitionsRequestTopic:
     name: str
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         item = DescribeTopicPartitionsRequestTopic(
             name=decode_compact_string(binary_stream),
         )
@@ -33,7 +33,7 @@ class DescribeTopicPartitionsCursor:
     partition_index: int
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         assert binary_stream.read(1) == b"\xff", "Unexpected cursor."
         return None
 
@@ -52,7 +52,7 @@ class DescribeTopicPartitionsRequest(AbstractRequest):
     cursor: DescribeTopicPartitionsCursor | None
 
     @classmethod
-    def decode_body_kwargs(cls, binary_stream: BinaryStream):
+    def decode_body_kwargs(cls, binary_stream: BinaryIO):
         body_kwargs = {
             "topics":  decode_compact_array(binary_stream, DescribeTopicPartitionsRequestTopic.decode),
             "response_partition_limit": decode_int32(binary_stream),

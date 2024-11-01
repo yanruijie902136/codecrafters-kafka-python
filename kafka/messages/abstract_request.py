@@ -1,7 +1,6 @@
 import abc
 import dataclasses
-
-from ..primitive_types import BinaryStream
+from typing import BinaryIO
 
 from .request_header import RequestHeader
 
@@ -12,5 +11,5 @@ class AbstractRequest(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def decode_body_kwargs(cls, binary_stream: BinaryStream):
+    def decode_body_kwargs(cls, binary_stream: BinaryIO):
         raise NotImplementedError

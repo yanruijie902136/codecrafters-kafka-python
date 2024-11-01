@@ -1,7 +1,7 @@
 import dataclasses
+from typing import BinaryIO
 
 from ..primitive_types import (
-    BinaryStream,
     decode_compact_string,
     decode_tagged_fields,
 )
@@ -15,7 +15,7 @@ class ApiVersionsRequest(AbstractRequest):
     client_software_version: str
 
     @classmethod
-    def decode_body_kwargs(cls, binary_stream: BinaryStream):
+    def decode_body_kwargs(cls, binary_stream: BinaryIO):
         body_kwargs = {
             "client_software_name": decode_compact_string(binary_stream),
             "client_software_version": decode_compact_string(binary_stream),

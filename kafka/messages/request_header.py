@@ -1,8 +1,8 @@
 import dataclasses
+from typing import BinaryIO
 
 from ..constants import ApiKey
 from ..primitive_types import (
-    BinaryStream,
     decode_int16,
     decode_int32,
     decode_nullable_string,
@@ -18,7 +18,7 @@ class RequestHeader:
     client_id: str
 
     @classmethod
-    def decode(cls, binary_stream: BinaryStream):
+    def decode(cls, binary_stream: BinaryIO):
         request_header = RequestHeader(
             api_key=ApiKey.decode(binary_stream),
             api_version=decode_int16(binary_stream),
