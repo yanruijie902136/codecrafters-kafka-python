@@ -3,6 +3,8 @@ import io
 
 from ..constants import ApiKey
 
+from .abstract_request import AbstractRequest
+from .abstract_response import AbstractResponse
 from .api_versions_request import ApiVersionsRequest
 from .api_versions_response import ApiVersionsResponse
 from .describe_topic_partitions_request import DescribeTopicPartitionsRequest
@@ -18,6 +20,7 @@ async def read_request(stream_reader: asyncio.StreamReader):
     binary_stream = io.BytesIO(await stream_reader.readexactly(n))
 
     header = RequestHeader.decode(binary_stream)
+    request_class: type[AbstractRequest]
     match header.api_key:
         case ApiKey.FETCH:
             request_class = FetchRequest
@@ -31,6 +34,7 @@ async def read_request(stream_reader: asyncio.StreamReader):
 
 def make_response(request):
     header = ResponseHeader.from_request_header(request.header)
+    response_class: type[AbstractResponse]
     match request.header.api_key:
         case ApiKey.FETCH:
             response_class = FetchResponse

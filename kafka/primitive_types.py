@@ -2,8 +2,8 @@ import struct
 import uuid
 from typing import Any, BinaryIO, Callable
 
-DecodeFunction = Callable[[BinaryIO], Any]
-EncodeFunction = Callable[[Any], bytes]
+type DecodeFunction = Callable[[BinaryIO], Any]
+type EncodeFunction = Callable[[Any], bytes]
 
 
 def decode_boolean(binary_stream: BinaryIO):
