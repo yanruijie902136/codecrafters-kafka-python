@@ -1,4 +1,5 @@
 import dataclasses
+import io
 from typing import BinaryIO
 
 from ..primitive_types import (
@@ -34,8 +35,16 @@ class DescribeTopicPartitionsCursor:
 
     @classmethod
     def decode(cls, binary_stream: BinaryIO):
-        assert binary_stream.read(1) == b"\xff", "Unexpected cursor."
-        return None
+        if binary_stream.read(1) == b"\xff":
+            return None
+        binary_stream.seek(-1, io.SEEK_CUR)
+
+        cursor = DescribeTopicPartitionsCursor(
+            topic_name=decode_compact_string(binary_stream),
+            partition_index=decode_int32(binary_stream),
+        )
+        decode_tagged_fields(binary_stream)
+        return cursor
 
     def encode(self):
         return b"".join([
