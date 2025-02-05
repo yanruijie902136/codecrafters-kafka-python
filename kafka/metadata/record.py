@@ -38,8 +38,7 @@ class Record:
             "key": decode_compact_bytes(binary_stream),
             "value_length": decode_varint(binary_stream),
         }
-        # XXX: For some reason value_length is twice the actual length of value.
-        record_kwargs["value"] = binary_stream.read(record_kwargs["value_length"] // 2)
+        record_kwargs["value"] = binary_stream.read(record_kwargs["value_length"])
         record_kwargs["headers"] = decode_compact_array(binary_stream, RecordHeader.decode)
         return Record(**record_kwargs)
 
