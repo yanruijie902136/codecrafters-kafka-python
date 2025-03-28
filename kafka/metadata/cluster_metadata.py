@@ -14,21 +14,19 @@ from .record_batch import RecordBatch
 from .record_type import RecordType
 
 
-class SingletonMeta(type):
-    _instances = {}
+class ClusterMetadata:
+    _instance = None
 
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args, **kwargs)
-        return cls._instances[cls]
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
-
-class ClusterMetadata(metaclass=SingletonMeta):
     def __init__(self):
         self._topic_id_lookup: dict[str, uuid.UUID] = {}
         self._topic_name_lookup: dict[uuid.UUID, str] = {}
 
-        self._partition_indices_lookup: defaultdict[uuid.UUID, list[int]] = defaultdict(list)
+        self._partition_indices_lookup = defaultdict[uuid.UUID, list[int]](list)
 
         for record_batch in read_record_batches("__cluster_metadata", 0):
             for record in record_batch.records:
