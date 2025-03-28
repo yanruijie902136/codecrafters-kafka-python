@@ -2,7 +2,7 @@ import dataclasses
 import io
 from typing import BinaryIO
 
-from ..primitive_types import (
+from ..protocol import (
     decode_compact_array,
     decode_compact_string,
     decode_int32,

@@ -1,6 +1,6 @@
 import asyncio
 
-from kafka import KafkaServer
+from kafka.server import KafkaServer
 
 
 def main():

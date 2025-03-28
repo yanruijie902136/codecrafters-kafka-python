@@ -2,7 +2,7 @@ import io
 import uuid
 from collections import defaultdict
 
-from ..primitive_types import (
+from ..protocol import (
     decode_compact_string,
     decode_int8,
     decode_int32,

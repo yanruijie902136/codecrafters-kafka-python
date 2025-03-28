@@ -1,7 +1,7 @@
 import dataclasses
 from typing import BinaryIO
 
-from ..primitive_types import decode_varint, encode_varint
+from ..protocol import decode_varint, encode_varint
 
 
 @dataclasses.dataclass

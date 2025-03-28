@@ -1,8 +1,8 @@
 import dataclasses
 from typing import BinaryIO
 
-from ..constants import ApiKey
-from ..primitive_types import (
+from ..protocol import (
+    ApiKey,
     decode_int16,
     decode_int32,
     decode_nullable_string,

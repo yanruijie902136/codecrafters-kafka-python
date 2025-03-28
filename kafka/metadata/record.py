@@ -1,7 +1,7 @@
 import dataclasses
 from typing import BinaryIO
 
-from ..primitive_types import (
+from ..protocol import (
     decode_compact_array,
     decode_compact_bytes,
     decode_int8,

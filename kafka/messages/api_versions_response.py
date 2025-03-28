@@ -1,7 +1,8 @@
 import dataclasses
 
-from ..constants import ApiKey, ErrorCode
-from ..primitive_types import (
+from ..protocol import (
+    ApiKey,
+    ErrorCode,
     encode_compact_array,
     encode_int16,
     encode_int32,

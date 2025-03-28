@@ -1,9 +1,9 @@
 import dataclasses
 import uuid
 
-from ..constants import ErrorCode
 from ..metadata import ClusterMetadata, RecordBatch, read_record_batches
-from ..primitive_types import (
+from ..protocol import (
+    ErrorCode,
     encode_compact_array,
     encode_int32,
     encode_int64,

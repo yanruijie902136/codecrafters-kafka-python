@@ -1,7 +1,7 @@
 import asyncio
 import io
 
-from ..constants import ApiKey
+from ..protocol import ApiKey
 
 from .abstract_request import AbstractRequest
 from .abstract_response import AbstractResponse

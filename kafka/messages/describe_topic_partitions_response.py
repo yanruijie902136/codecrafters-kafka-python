@@ -1,9 +1,9 @@
 import dataclasses
 import uuid
 
-from ..constants import ErrorCode
 from ..metadata import ClusterMetadata
-from ..primitive_types import (
+from ..protocol import (
+    ErrorCode,
     encode_boolean,
     encode_compact_array,
     encode_compact_nullable_string,

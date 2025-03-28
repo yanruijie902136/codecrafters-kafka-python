@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 
-from ..primitive_types import encode_int32
+from ..protocol import encode_int32
 
 from .response_header import ResponseHeader
 

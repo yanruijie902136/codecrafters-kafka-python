@@ -1,7 +1,7 @@
 import dataclasses
 from typing import BinaryIO
 
-from ..primitive_types import decode_compact_string, decode_tagged_fields
+from ..protocol import decode_compact_string, decode_tagged_fields
 
 from .abstract_request import AbstractRequest
 

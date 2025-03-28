@@ -1,7 +1,6 @@
 import dataclasses
 
-from ..constants import ApiKey
-from ..primitive_types import encode_int32, encode_tagged_fields
+from ..protocol import ApiKey, encode_int32, encode_tagged_fields
 
 from .request_header import RequestHeader
 
