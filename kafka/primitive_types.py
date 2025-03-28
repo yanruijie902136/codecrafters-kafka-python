@@ -1,6 +1,8 @@
+import itertools
 import struct
 import uuid
 from typing import Any, BinaryIO, Callable
+
 
 type DecodeFunction = Callable[[BinaryIO], Any]
 type EncodeFunction = Callable[[Any], bytes]
@@ -55,13 +57,12 @@ def encode_uint32(integer: int):
 
 
 def decode_unsigned_varint(binary_stream: BinaryIO):
-    n, shamt = 0, 0
-    while True:
-        c = int.from_bytes(binary_stream.read(1))
+    n = 0
+    for shamt in itertools.count(start=0, step=7):
+        c = ord(binary_stream.read(1))
         n += (c & 0x7F) << shamt
         if not (c & 0x80):
             return n
-        shamt += 7
 
 
 def decode_varint(binary_stream: BinaryIO):
@@ -72,7 +73,7 @@ def decode_varint(binary_stream: BinaryIO):
 def encode_unsigned_varint(integer: int):
     encoding = b""
     while True:
-        c, integer = integer & 0x7F, integer >> 7
+        integer, c = divmod(integer, 0x80)
         if integer > 0:
             c |= 0x80
         encoding += c.to_bytes(1)
