@@ -16,6 +16,7 @@ class Encodable(typing.Protocol):
 @enum.unique
 class ApiKey(enum.IntEnum):
     API_VERSIONS = 18
+    DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
     def decode(cls, readable: Readable) -> typing.Self:
