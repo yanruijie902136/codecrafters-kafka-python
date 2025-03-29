@@ -54,7 +54,10 @@ class ApiVersionsResponse(Response):
     api_keys: list[ApiVersion]
     throttle_time_ms: int
 
-    def _encode_body(self):
+    def _encode_header(self) -> bytes:
+        return self.header.encode(version=0)
+
+    def _encode_body(self) -> bytes:
         return b"".join([
             self.error_code.encode(),
             encode_compact_array(self.api_keys),

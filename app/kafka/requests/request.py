@@ -36,8 +36,13 @@ class Request(abc.ABC):
 
 def decode_request(readable: Readable) -> Request:
     header = RequestHeader.decode(readable)
+
     match header.request_api_key:
         case ApiKey.API_VERSIONS:
             from .api_versions import ApiVersionsRequest
             request_class = ApiVersionsRequest
+        case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
+            from .describe_topic_partitions import DescribeTopicPartitionsRequest
+            request_class = DescribeTopicPartitionsRequest
+
     return request_class.decode_body(header, readable)
