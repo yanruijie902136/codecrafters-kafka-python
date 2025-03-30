@@ -124,12 +124,12 @@ class AbortedTransaction:
 class PartitionData:
     partition_index: int
     error_code: ErrorCode
-    high_watermark: int
-    last_stable_offset: int
-    log_start_offset: int
-    aborted_transactions: list[AbortedTransaction]
-    preferred_read_replica: int
-    records: list[RecordBatch]
+    high_watermark: int = 0
+    last_stable_offset: int = 0
+    log_start_offset: int = 0
+    aborted_transactions: list[AbortedTransaction] = dataclasses.field(default_factory=list)
+    preferred_read_replica: int = 0
+    records: list[RecordBatch] = dataclasses.field(default_factory=list)
 
     def encode(self) -> bytes:
         return b"".join([
@@ -181,5 +181,14 @@ def handle_fetch_request(request: FetchRequest) -> FetchResponse:
         throttle_time_ms=0,
         error_code=ErrorCode.NONE,
         session_id=0,
-        responses=[],
+        responses=[handle_fetch_topic(fetch_topic) for fetch_topic in request.topics],
+    )
+
+
+def handle_fetch_topic(fetch_topic: FetchTopic) -> FetchableTopicResponse:
+    return FetchableTopicResponse(
+        topic_id=fetch_topic.topic_id,
+        partitions=[
+            PartitionData(partition_index=0, error_code=ErrorCode.UNKNOWN_TOPIC_ID),
+        ],
     )
