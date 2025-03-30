@@ -38,6 +38,9 @@ def decode_request(readable: Readable) -> Request:
     header = RequestHeader.decode(readable)
 
     match header.request_api_key:
+        case ApiKey.FETCH:
+            from .fetch import FetchRequest
+            request_class = FetchRequest
         case ApiKey.API_VERSIONS:
             from .api_versions import ApiVersionsRequest
             request_class = ApiVersionsRequest

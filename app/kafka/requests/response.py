@@ -39,6 +39,9 @@ class Response(abc.ABC):
 
 def handle_request(request: Request) -> Response:
     match request.header.request_api_key:
+        case ApiKey.FETCH:
+            from .fetch import FetchRequest, handle_fetch_request
+            request_class, request_handler = FetchRequest, handle_fetch_request
         case ApiKey.API_VERSIONS:
             from .api_versions import ApiVersionsRequest, handle_api_versions_request
             request_class, request_handler = ApiVersionsRequest, handle_api_versions_request

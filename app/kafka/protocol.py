@@ -65,6 +65,10 @@ def decode_int64(readable: Readable) -> int:
     return int.from_bytes(readable.read(8), signed=True)
 
 
+def encode_int64(n: int) -> bytes:
+    return n.to_bytes(8, signed=True)
+
+
 def decode_uint32(readable: Readable) -> int:
     return int.from_bytes(readable.read(4))
 

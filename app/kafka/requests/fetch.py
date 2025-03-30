@@ -1,0 +1,185 @@
+import dataclasses
+import typing
+import uuid
+
+from ..metadata import RecordBatch
+from ..protocol import (
+    ErrorCode,
+    Readable,
+    decode_compact_array,
+    decode_compact_string,
+    decode_int32,
+    decode_int64,
+    decode_int8,
+    decode_tagged_fields,
+    decode_uuid,
+    encode_compact_array,
+    encode_int32,
+    encode_int64,
+    encode_tagged_fields,
+    encode_uuid,
+)
+
+from .request import Request, RequestHeader
+from .response import Response, ResponseHeader
+
+
+@dataclasses.dataclass(frozen=True)
+class FetchPartition:
+    partition: int
+    current_leader_epoch: int
+    fetch_offset: int
+    last_fetched_epoch: int
+    log_start_offset: int
+    partition_max_bytes: int
+
+    @classmethod
+    def decode(cls, readable: Readable) -> typing.Self:
+        fetch_partition = cls(
+            partition=decode_int32(readable),
+            current_leader_epoch=decode_int32(readable),
+            fetch_offset=decode_int64(readable),
+            last_fetched_epoch=decode_int32(readable),
+            log_start_offset=decode_int64(readable),
+            partition_max_bytes=decode_int32(readable),
+        )
+        decode_tagged_fields(readable)
+        return fetch_partition
+
+
+@dataclasses.dataclass(frozen=True)
+class FetchTopic:
+    topic_id: uuid.UUID
+    partitions: list[FetchPartition]
+
+    @classmethod
+    def decode(cls, readable: Readable) -> typing.Self:
+        fetch_topic = cls(
+            topic_id=decode_uuid(readable),
+            partitions=decode_compact_array(readable, FetchPartition.decode),
+        )
+        decode_tagged_fields(readable)
+        return fetch_topic
+
+
+@dataclasses.dataclass(frozen=True)
+class ForgottenTopic:
+    topic_id: uuid.UUID
+    partitions: list[int]
+
+    @classmethod
+    def decode(cls, readable: Readable) -> typing.Self:
+        forgotten_topic = cls(
+            topic_id=decode_uuid(readable),
+            partitions=decode_compact_array(readable, decode_int32),
+        )
+        decode_tagged_fields(readable)
+        return forgotten_topic
+
+
+@dataclasses.dataclass(frozen=True)
+class FetchRequest(Request):
+    max_wait_ms: int
+    min_bytes: int
+    max_bytes: int
+    isolation_level: int
+    session_id: int
+    session_epoch: int
+    topics: list[FetchTopic]
+    forgotten_topics_data: list
+    rack_id: str
+
+    @classmethod
+    def decode_body(cls, header: RequestHeader, readable: Readable) -> typing.Self:
+        request = cls(
+            header=header,
+            max_wait_ms=decode_int32(readable),
+            min_bytes=decode_int32(readable),
+            max_bytes=decode_int32(readable),
+            isolation_level=decode_int8(readable),
+            session_id=decode_int32(readable),
+            session_epoch=decode_int32(readable),
+            topics=decode_compact_array(readable, FetchTopic.decode),
+            forgotten_topics_data=decode_compact_array(readable, ForgottenTopic.decode),
+            rack_id=decode_compact_string(readable),
+        )
+        decode_tagged_fields(readable)
+        return request
+
+
+@dataclasses.dataclass(frozen=True)
+class AbortedTransaction:
+    producer_id: int
+    first_offset: int
+
+    def encode(self) -> bytes:
+        return b"".join([
+            encode_int64(self.producer_id),
+            encode_int64(self.first_offset),
+            encode_tagged_fields(),
+        ])
+
+
+@dataclasses.dataclass(frozen=True)
+class PartitionData:
+    partition_index: int
+    error_code: ErrorCode
+    high_watermark: int
+    last_stable_offset: int
+    log_start_offset: int
+    aborted_transactions: list[AbortedTransaction]
+    preferred_read_replica: int
+    records: list[RecordBatch]
+
+    def encode(self) -> bytes:
+        return b"".join([
+            encode_int32(self.partition_index),
+            self.error_code.encode(),
+            encode_int64(self.high_watermark),
+            encode_int64(self.last_stable_offset),
+            encode_int64(self.log_start_offset),
+            encode_compact_array(self.aborted_transactions),
+            encode_int32(self.preferred_read_replica),
+            encode_compact_array(self.records),
+            encode_tagged_fields(),
+        ])
+
+
+@dataclasses.dataclass(frozen=True)
+class FetchableTopicResponse:
+    topic_id: uuid.UUID
+    partitions: list[PartitionData]
+
+    def encode(self) -> bytes:
+        return b"".join([
+            encode_uuid(self.topic_id),
+            encode_compact_array(self.partitions),
+            encode_tagged_fields(),
+        ])
+
+
+@dataclasses.dataclass(frozen=True)
+class FetchResponse(Response):
+    throttle_time_ms: int
+    error_code: ErrorCode
+    session_id: int
+    responses: list[FetchableTopicResponse]
+
+    def _encode_body(self) -> bytes:
+        return b"".join([
+            encode_int32(self.throttle_time_ms),
+            self.error_code.encode(),
+            encode_int32(self.session_id),
+            encode_compact_array(self.responses),
+            encode_tagged_fields(),
+        ])
+
+
+def handle_fetch_request(request: FetchRequest) -> FetchResponse:
+    return FetchResponse(
+        header=ResponseHeader.from_request_header(request.header),
+        throttle_time_ms=0,
+        error_code=ErrorCode.NONE,
+        session_id=0,
+        responses=[],
+    )
