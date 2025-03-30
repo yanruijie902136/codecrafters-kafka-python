@@ -2,6 +2,7 @@ import dataclasses
 import typing
 import uuid
 
+from ..metadata import ClusterMetadata
 from ..protocol import (
     ErrorCode,
     Readable,
@@ -29,7 +30,7 @@ class Cursor:
 
     @classmethod
     def decode(cls, readable: Readable) -> typing.Self | None:
-        if readable.read(1) == b"\xff":
+        if (ord(readable.read(1)) & 0x80):
             return None
         cursor = cls(
             topic_name=decode_compact_string(readable),
@@ -62,7 +63,7 @@ class TopicRequest:
 
 @dataclasses.dataclass(frozen=True)
 class DescribeTopicPartitionsRequest(Request):
-    topics: list[TopicRequest] | None
+    topics: list[TopicRequest]
     response_partition_limit: int
     cursor: Cursor | None
 
@@ -84,11 +85,11 @@ class ResponsePartition:
     partition_index: int
     leader_id: int = 0
     leader_epoch: int = 0
-    replica_nodes: list[int] | None = None
-    isr_nodes: list[int] | None = None
-    eligible_leader_replicas: list[int] | None = None
-    last_known_elr: list[int] | None = None
-    offline_replicas: list[int] | None = None
+    replica_nodes: list[int] = dataclasses.field(default_factory=list)
+    isr_nodes: list[int] = dataclasses.field(default_factory=list)
+    eligible_leader_replicas: list[int] = dataclasses.field(default_factory=list)
+    last_known_elr: list[int] = dataclasses.field(default_factory=list)
+    offline_replicas: list[int] = dataclasses.field(default_factory=list)
 
     def encode(self) -> bytes:
         return b"".join([
@@ -111,7 +112,7 @@ class ResponseTopic:
     name: str | None
     topic_id: uuid.UUID
     is_internal: bool = False
-    partitions: list[ResponsePartition] | None = None
+    partitions: list[ResponsePartition] = dataclasses.field(default_factory=list)
     topic_authorized_operations: int = 0
 
     def encode(self) -> bytes:
@@ -129,7 +130,7 @@ class ResponseTopic:
 @dataclasses.dataclass(frozen=True)
 class DescribeTopicPartitionsResponse(Response):
     throttle_time_ms: int
-    topics: list[ResponseTopic] | None
+    topics: list[ResponseTopic]
     cursor: Cursor | None = None
 
     def _encode_body(self) -> bytes:
@@ -145,11 +146,26 @@ def handle_describe_topic_partitions_request(request: DescribeTopicPartitionsReq
     return DescribeTopicPartitionsResponse(
         header=ResponseHeader.from_request_header(request.header),
         throttle_time_ms=0,
-        topics=[
-            ResponseTopic(
-                error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
-                name=request.topics[0].name,
-                topic_id=uuid.UUID(int=0),
-            ),
+        topics=[handle_topic_request(topic_request) for topic_request in request.topics],
+    )
+
+
+def handle_topic_request(topic_request: TopicRequest) -> ResponseTopic:
+    cluster_metadata = ClusterMetadata()
+
+    if (topic_id := cluster_metadata.get_topic_id(topic_request.name)) is None:
+        return ResponseTopic(
+            error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
+            name=topic_request.name,
+            topic_id=uuid.UUID(int=0),
+        )
+
+    return ResponseTopic(
+        error_code=ErrorCode.NONE,
+        name=topic_request.name,
+        topic_id=topic_id,
+        partitions=[
+            ResponsePartition(error_code=ErrorCode.NONE, partition_index=partition_index)
+            for partition_index in cluster_metadata.get_topic_partitions(topic_id)
         ],
     )

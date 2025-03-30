@@ -40,6 +40,10 @@ def encode_boolean(b: bool) -> bytes:
     return b.to_bytes(1)
 
 
+def decode_int8(readable: Readable) -> int:
+    return int.from_bytes(readable.read(1), signed=True)
+
+
 def decode_int16(readable: Readable) -> int:
     return int.from_bytes(readable.read(2), signed=True)
 
@@ -54,6 +58,14 @@ def decode_int32(readable: Readable) -> int:
 
 def encode_int32(n: int) -> bytes:
     return n.to_bytes(4, signed=True)
+
+
+def decode_int64(readable: Readable) -> int:
+    return int.from_bytes(readable.read(8), signed=True)
+
+
+def decode_uint32(readable: Readable) -> int:
+    return int.from_bytes(readable.read(4))
 
 
 def decode_unsigned_varint(readable: Readable) -> int:
@@ -74,6 +86,15 @@ def encode_unsigned_varint(n: int) -> bytes:
         encoding += c.to_bytes(1)
         if n == 0:
             return encoding
+
+
+def decode_varint(readable: Readable) -> int:
+    n = decode_unsigned_varint(readable)
+    return -((n >> 1) + 1) if (n & 1) else (n >> 1)
+
+
+def decode_uuid(readable: Readable) -> uuid.UUID:
+    return uuid.UUID(bytes=readable.read(16))
 
 
 def encode_uuid(u: uuid.UUID) -> bytes:
@@ -101,14 +122,17 @@ def encode_compact_nullable_string(s: str | None) -> bytes:
     return encode_unsigned_varint(len(s) + 1) + s.encode()
 
 
-def decode_compact_array[T](readable: Readable, decode_function: DecodeFunction[T]) -> list[T] | None:
+def decode_array[T](readable: Readable, decode_function: DecodeFunction[T]) -> list[T]:
+    n = decode_int32(readable)
+    return [] if n < 0 else [decode_function(readable) for _ in range(n)]
+
+
+def decode_compact_array[T](readable: Readable, decode_function: DecodeFunction[T]) -> list[T]:
     n = decode_unsigned_varint(readable)
-    return None if n == 0 else [decode_function(readable) for _ in range(n - 1)]
+    return [] if n == 0 else [decode_function(readable) for _ in range(n - 1)]
 
 
-def encode_compact_array[T](arr: list[T] | None, encode_function: EncodeFunction[T] | None = None) -> bytes:
-    if arr is None:
-        return encode_unsigned_varint(0)
+def encode_compact_array[T](arr: list[T], encode_function: EncodeFunction[T] | None = None) -> bytes:
     return encode_unsigned_varint(len(arr) + 1) + b"".join(
         t.encode() if encode_function is None else encode_function(t) for t in arr
     )
