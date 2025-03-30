@@ -46,6 +46,10 @@ def decode_int8(readable: Readable) -> int:
     return int.from_bytes(readable.read(1), signed=True)
 
 
+def encode_int8(n: int) -> bytes:
+    return n.to_bytes(1, signed=True)
+
+
 def decode_int16(readable: Readable) -> int:
     return int.from_bytes(readable.read(2), signed=True)
 
@@ -74,6 +78,10 @@ def decode_uint32(readable: Readable) -> int:
     return int.from_bytes(readable.read(4))
 
 
+def encode_uint32(n: int) -> bytes:
+    return n.to_bytes(4)
+
+
 def decode_unsigned_varint(readable: Readable) -> int:
     n = 0
     for shamt in itertools.count(start=0, step=7):
@@ -97,6 +105,18 @@ def encode_unsigned_varint(n: int) -> bytes:
 def decode_varint(readable: Readable) -> int:
     n = decode_unsigned_varint(readable)
     return -((n >> 1) + 1) if (n & 1) else (n >> 1)
+
+
+def encode_varint(n: int) -> bytes:
+    return encode_unsigned_varint((n << 1) ^ (n >> 31))
+
+
+def decode_varlong(readable: Readable) -> int:
+    return decode_varint(readable)
+
+
+def encode_varlong(n: int) -> bytes:
+    return encode_unsigned_varint((n << 1) ^ (n >> 63))
 
 
 def decode_uuid(readable: Readable) -> uuid.UUID:
@@ -131,6 +151,12 @@ def encode_compact_nullable_string(s: str | None) -> bytes:
 def decode_array[T](readable: Readable, decode_function: DecodeFunction[T]) -> list[T]:
     n = decode_int32(readable)
     return [] if n < 0 else [decode_function(readable) for _ in range(n)]
+
+
+def encode_array[T](arr: list[T], encode_function: EncodeFunction[T] | None = None) -> bytes:
+    return encode_int32(len(arr)) + b"".join(
+        t.encode() if encode_function is None else encode_function(t) for t in arr
+    )
 
 
 def decode_compact_array[T](readable: Readable, decode_function: DecodeFunction[T]) -> list[T]:

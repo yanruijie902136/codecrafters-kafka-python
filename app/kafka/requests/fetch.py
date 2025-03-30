@@ -2,7 +2,7 @@ import dataclasses
 import typing
 import uuid
 
-from ..metadata import ClusterMetadata, RecordBatch
+from ..metadata import ClusterMetadata, RecordBatch, read_record_batches
 from ..protocol import (
     ErrorCode,
     Readable,
@@ -188,7 +188,7 @@ def handle_fetch_request(request: FetchRequest) -> FetchResponse:
 def handle_fetch_topic(fetch_topic: FetchTopic) -> FetchableTopicResponse:
     cluster_metadata = ClusterMetadata()
 
-    if (partitions := cluster_metadata.get_topic_partitions(fetch_topic.topic_id)) is None:
+    if (topic_name := cluster_metadata.get_topic_name(fetch_topic.topic_id)) is None:
         return FetchableTopicResponse(
             topic_id=fetch_topic.topic_id,
             partitions=[
@@ -199,7 +199,11 @@ def handle_fetch_topic(fetch_topic: FetchTopic) -> FetchableTopicResponse:
     return FetchableTopicResponse(
         topic_id=fetch_topic.topic_id,
         partitions=[
-            PartitionData(partition_index=partition_index, error_code=ErrorCode.NONE)
-            for partition_index in partitions
+            PartitionData(
+                partition_index=p.partition,
+                error_code=ErrorCode.NONE,
+                records=list(read_record_batches(topic_name, p.partition)),
+            )
+            for p in fetch_topic.partitions
         ],
     )

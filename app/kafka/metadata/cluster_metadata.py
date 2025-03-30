@@ -16,6 +16,7 @@ class ClusterMetadata:
 
     def __init__(self) -> None:
         self._name_to_id: dict[str, uuid.UUID] = {}
+        self._id_to_name: dict[uuid.UUID, str] = {}
         self._id_to_partitions = collections.defaultdict[uuid.UUID, list[int]](list)
 
         for record_batch in read_record_batches("__cluster_metadata", 0):
@@ -24,6 +25,9 @@ class ClusterMetadata:
                     self._add_partition_record(record)
                 elif isinstance(record, TopicRecord):
                     self._add_topic_record(record)
+
+    def get_topic_name(self, topic_id: uuid.UUID) -> str | None:
+        return self._id_to_name.get(topic_id)
 
     def get_topic_id(self, topic_name: str) -> uuid.UUID | None:
         return self._name_to_id.get(topic_name)
@@ -36,3 +40,4 @@ class ClusterMetadata:
 
     def _add_topic_record(self, record: TopicRecord) -> None:
         self._name_to_id[record.name] = record.topic_id
+        self._id_to_name[record.topic_id] = record.name
