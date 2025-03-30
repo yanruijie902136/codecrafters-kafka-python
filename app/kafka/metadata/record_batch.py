@@ -44,7 +44,7 @@ class RecordBatch:
             crc=decode_uint32(new_readable),
             attributes=decode_int16(new_readable),
             last_offset_delta=decode_int32(new_readable),
-            base_timestamp=decode_int64(readable),
+            base_timestamp=decode_int64(new_readable),
             max_timestamp=decode_int64(new_readable),
             producer_id=decode_int64(new_readable),
             producer_epoch=decode_int16(new_readable),
