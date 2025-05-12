@@ -17,6 +17,7 @@ from ..protocol import (
     encode_int32,
     encode_int64,
     encode_tagged_fields,
+    encode_unsigned_varint,
     encode_uuid,
 )
 
@@ -132,6 +133,7 @@ class PartitionData:
     records: list[RecordBatch] = dataclasses.field(default_factory=list)
 
     def encode(self) -> bytes:
+        encoded_records = b"".join(record.encode() for record in self.records)
         return b"".join([
             encode_int32(self.partition_index),
             self.error_code.encode(),
@@ -140,7 +142,8 @@ class PartitionData:
             encode_int64(self.log_start_offset),
             encode_compact_array(self.aborted_transactions),
             encode_int32(self.preferred_read_replica),
-            encode_compact_array(self.records),
+            encode_unsigned_varint(len(encoded_records)),
+            encoded_records,
             encode_tagged_fields(),
         ])
 
