@@ -5,7 +5,7 @@ import uuid
 
 
 class Readable(typing.Protocol):
-    def read(self, n: int) -> bytes:
+    def read(self, n: int, /) -> bytes:
         ...
 
 
