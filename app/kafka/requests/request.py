@@ -1,11 +1,11 @@
-import abc
-import dataclasses
-import typing
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Self
 
-from ..protocol import ApiKey, Readable, decode_int16, decode_int32, decode_nullable_string, decode_tagged_fields
+from ..protocol import *
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class RequestHeader:
     request_api_key: ApiKey
     request_api_version: int
@@ -13,7 +13,7 @@ class RequestHeader:
     client_id: str | None
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         request_header = cls(
             request_api_key=ApiKey.decode(readable),
             request_api_version=decode_int16(readable),
@@ -24,13 +24,13 @@ class RequestHeader:
         return request_header
 
 
-@dataclasses.dataclass(frozen=True)
-class Request(abc.ABC):
+@dataclass(frozen=True)
+class Request(ABC):
     header: RequestHeader
 
     @classmethod
-    @abc.abstractmethod
-    def decode_body(cls, header: RequestHeader, readable: Readable) -> typing.Self:
+    @abstractmethod
+    def decode_body(cls, header: RequestHeader, readable: Readable) -> Self:
         raise NotImplementedError
 
 

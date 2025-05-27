@@ -1,31 +1,14 @@
-import dataclasses
-import typing
-import uuid
+from dataclasses import dataclass, field
+from typing import Self
+from uuid import UUID
 
 from ..metadata import ClusterMetadata, RecordBatch, read_record_batches
-from ..protocol import (
-    ErrorCode,
-    Readable,
-    decode_compact_array,
-    decode_compact_string,
-    decode_int32,
-    decode_int64,
-    decode_int8,
-    decode_tagged_fields,
-    decode_uuid,
-    encode_compact_array,
-    encode_int32,
-    encode_int64,
-    encode_tagged_fields,
-    encode_unsigned_varint,
-    encode_uuid,
-)
-
+from ..protocol import *
 from .request import Request, RequestHeader
 from .response import Response, ResponseHeader
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FetchPartition:
     partition: int
     current_leader_epoch: int
@@ -35,7 +18,7 @@ class FetchPartition:
     partition_max_bytes: int
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         fetch_partition = cls(
             partition=decode_int32(readable),
             current_leader_epoch=decode_int32(readable),
@@ -48,13 +31,13 @@ class FetchPartition:
         return fetch_partition
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FetchTopic:
-    topic_id: uuid.UUID
+    topic_id: UUID
     partitions: list[FetchPartition]
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         fetch_topic = cls(
             topic_id=decode_uuid(readable),
             partitions=decode_compact_array(readable, FetchPartition.decode),
@@ -63,13 +46,13 @@ class FetchTopic:
         return fetch_topic
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ForgottenTopic:
-    topic_id: uuid.UUID
+    topic_id: UUID
     partitions: list[int]
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         forgotten_topic = cls(
             topic_id=decode_uuid(readable),
             partitions=decode_compact_array(readable, decode_int32),
@@ -78,7 +61,7 @@ class ForgottenTopic:
         return forgotten_topic
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FetchRequest(Request):
     max_wait_ms: int
     min_bytes: int
@@ -91,7 +74,7 @@ class FetchRequest(Request):
     rack_id: str
 
     @classmethod
-    def decode_body(cls, header: RequestHeader, readable: Readable) -> typing.Self:
+    def decode_body(cls, header: RequestHeader, readable: Readable) -> Self:
         request = cls(
             header=header,
             max_wait_ms=decode_int32(readable),
@@ -108,7 +91,7 @@ class FetchRequest(Request):
         return request
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class AbortedTransaction:
     producer_id: int
     first_offset: int
@@ -121,16 +104,16 @@ class AbortedTransaction:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class PartitionData:
     partition_index: int
     error_code: ErrorCode
     high_watermark: int = 0
     last_stable_offset: int = 0
     log_start_offset: int = 0
-    aborted_transactions: list[AbortedTransaction] = dataclasses.field(default_factory=list)
+    aborted_transactions: list[AbortedTransaction] = field(default_factory=list)
     preferred_read_replica: int = 0
-    records: list[RecordBatch] = dataclasses.field(default_factory=list)
+    records: list[RecordBatch] = field(default_factory=list)
 
     def encode(self) -> bytes:
         encoded_records = b"".join(record.encode() for record in self.records)
@@ -148,9 +131,9 @@ class PartitionData:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FetchableTopicResponse:
-    topic_id: uuid.UUID
+    topic_id: UUID
     partitions: list[PartitionData]
 
     def encode(self) -> bytes:
@@ -161,7 +144,7 @@ class FetchableTopicResponse:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FetchResponse(Response):
     throttle_time_ms: int
     error_code: ErrorCode
@@ -184,11 +167,11 @@ def handle_fetch_request(request: FetchRequest) -> FetchResponse:
         throttle_time_ms=0,
         error_code=ErrorCode.NONE,
         session_id=0,
-        responses=[handle_fetch_topic(fetch_topic) for fetch_topic in request.topics],
+        responses=[_handle_fetch_topic(fetch_topic) for fetch_topic in request.topics],
     )
 
 
-def handle_fetch_topic(fetch_topic: FetchTopic) -> FetchableTopicResponse:
+def _handle_fetch_topic(fetch_topic: FetchTopic) -> FetchableTopicResponse:
     cluster_metadata = ClusterMetadata()
 
     if (topic_name := cluster_metadata.get_topic_name(fetch_topic.topic_id)) is None:

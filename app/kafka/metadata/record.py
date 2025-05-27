@@ -1,47 +1,31 @@
-import abc
-import dataclasses
 import enum
-import io
-import typing
-import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from io import BytesIO
+from typing import Self
+from uuid import UUID
 
-from ..protocol import (
-    Readable,
-    decode_compact_array,
-    decode_compact_string,
-    decode_int16,
-    decode_int32,
-    decode_int8,
-    decode_tagged_fields,
-    decode_unsigned_varint,
-    decode_uuid,
-    decode_varint,
-    decode_varlong,
-    encode_int8,
-    encode_unsigned_varint,
-    encode_varint,
-    encode_varlong,
-)
+from ..protocol import *
 
 
-class Record(abc.ABC):
+class Record(ABC):
     @classmethod
-    @abc.abstractmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    @abstractmethod
+    def decode(cls, readable: Readable) -> Self:
         raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def encode(self) -> bytes:
         raise NotImplementedError
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class RecordHeader:
     key: str
     value: bytes
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         key_length = decode_varint(readable)
         key = readable.read(key_length).decode()
         value_length = decode_varint(readable)
@@ -57,7 +41,7 @@ class RecordHeader:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class DefaultRecord(Record):
     attributes: int
     timestamp_delta: int
@@ -67,9 +51,9 @@ class DefaultRecord(Record):
     headers: list[RecordHeader]
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         length = decode_varint(readable)
-        new_readable = io.BytesIO(readable.read(length))
+        new_readable = BytesIO(readable.read(length))
         attributes = decode_int8(new_readable)
         timestamp_delta = decode_varlong(new_readable)
         offset_delta = decode_varint(new_readable)
@@ -109,23 +93,23 @@ class MetadataRecordType(enum.IntEnum):
     FEATURE_LEVEL = 12
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         return cls(decode_int8(readable))
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class MetadataRecord(Record):
     record: DefaultRecord
 
     @classmethod
-    @abc.abstractmethod
-    def decode_value(cls, record: DefaultRecord, readable: Readable) -> typing.Self:
+    @abstractmethod
+    def decode_value(cls, record: DefaultRecord, readable: Readable) -> Self:
         raise NotImplementedError
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         record = DefaultRecord.decode(readable)
-        new_readable = io.BytesIO(record.value)
+        new_readable = BytesIO(record.value)
 
         frame_version = decode_int8(new_readable)
         record_type = MetadataRecordType.decode(new_readable)
@@ -143,13 +127,13 @@ class MetadataRecord(Record):
         return self.record.encode()
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class TopicRecord(MetadataRecord):
     name: str
-    topic_id: uuid.UUID
+    topic_id: UUID
 
     @classmethod
-    def decode_value(cls, record: DefaultRecord, readable: Readable) -> typing.Self:
+    def decode_value(cls, record: DefaultRecord, readable: Readable) -> Self:
         record = cls(
             record=record,
             name=decode_compact_string(readable),
@@ -159,10 +143,10 @@ class TopicRecord(MetadataRecord):
         return record
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class PartitionRecord(MetadataRecord):
     partition_id: int
-    topic_id: uuid.UUID
+    topic_id: UUID
     replicas: list[int]
     isr: list[int]
     removing_replicas: list[int]
@@ -170,10 +154,10 @@ class PartitionRecord(MetadataRecord):
     leader: int
     leader_epoch: int
     partition_epoch: int
-    directories: list[uuid.UUID]
+    directories: list[UUID]
 
     @classmethod
-    def decode_value(cls, record: DefaultRecord, readable: Readable) -> typing.Self:
+    def decode_value(cls, record: DefaultRecord, readable: Readable) -> Self:
         record = cls(
             record=record,
             partition_id=decode_int32(readable),
@@ -191,13 +175,13 @@ class PartitionRecord(MetadataRecord):
         return record
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class FeatureLevelRecord(MetadataRecord):
     name: str
     feature_level: int
 
     @classmethod
-    def decode_value(cls, record: DefaultRecord, readable: Readable) -> typing.Self:
+    def decode_value(cls, record: DefaultRecord, readable: Readable) -> Self:
         record = cls(
             record=record,
             name=decode_compact_string(readable),

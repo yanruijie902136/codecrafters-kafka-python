@@ -1,35 +1,20 @@
-import dataclasses
-import typing
-import uuid
+from dataclasses import dataclass, field
+from typing import Self
+from uuid import UUID
 
 from ..metadata import ClusterMetadata
-from ..protocol import (
-    ErrorCode,
-    Readable,
-    decode_compact_array,
-    decode_compact_string,
-    decode_int32,
-    decode_tagged_fields,
-    encode_boolean,
-    encode_compact_array,
-    encode_compact_nullable_string,
-    encode_compact_string,
-    encode_int32,
-    encode_tagged_fields,
-    encode_uuid,
-)
-
+from ..protocol import *
 from .request import Request, RequestHeader
 from .response import Response, ResponseHeader
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Cursor:
     topic_name: str
     partition_index: int
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self | None:
+    def decode(cls, readable: Readable) -> Self | None:
         if (ord(readable.read(1)) & 0x80):
             return None
         cursor = cls(
@@ -50,25 +35,25 @@ def encode_cursor(cursor: Cursor | None) -> bytes:
     ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class TopicRequest:
     name: str
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         topic_request = cls(name=decode_compact_string(readable))
         decode_tagged_fields(readable)
         return topic_request
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class DescribeTopicPartitionsRequest(Request):
     topics: list[TopicRequest]
     response_partition_limit: int
     cursor: Cursor | None
 
     @classmethod
-    def decode_body(cls, header: RequestHeader, readable: Readable) -> typing.Self:
+    def decode_body(cls, header: RequestHeader, readable: Readable) -> Self:
         request = cls(
             header=header,
             topics=decode_compact_array(readable, TopicRequest.decode),
@@ -79,17 +64,17 @@ class DescribeTopicPartitionsRequest(Request):
         return request
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ResponsePartition:
     error_code: ErrorCode
     partition_index: int
     leader_id: int = 0
     leader_epoch: int = 0
-    replica_nodes: list[int] = dataclasses.field(default_factory=list)
-    isr_nodes: list[int] = dataclasses.field(default_factory=list)
-    eligible_leader_replicas: list[int] = dataclasses.field(default_factory=list)
-    last_known_elr: list[int] = dataclasses.field(default_factory=list)
-    offline_replicas: list[int] = dataclasses.field(default_factory=list)
+    replica_nodes: list[int] = field(default_factory=list)
+    isr_nodes: list[int] = field(default_factory=list)
+    eligible_leader_replicas: list[int] = field(default_factory=list)
+    last_known_elr: list[int] = field(default_factory=list)
+    offline_replicas: list[int] = field(default_factory=list)
 
     def encode(self) -> bytes:
         return b"".join([
@@ -106,13 +91,13 @@ class ResponsePartition:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ResponseTopic:
     error_code: ErrorCode
     name: str | None
-    topic_id: uuid.UUID
+    topic_id: UUID
     is_internal: bool = False
-    partitions: list[ResponsePartition] = dataclasses.field(default_factory=list)
+    partitions: list[ResponsePartition] = field(default_factory=list)
     topic_authorized_operations: int = 0
 
     def encode(self) -> bytes:
@@ -127,7 +112,7 @@ class ResponseTopic:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class DescribeTopicPartitionsResponse(Response):
     throttle_time_ms: int
     topics: list[ResponseTopic]
@@ -146,18 +131,18 @@ def handle_describe_topic_partitions_request(request: DescribeTopicPartitionsReq
     return DescribeTopicPartitionsResponse(
         header=ResponseHeader.from_request_header(request.header),
         throttle_time_ms=0,
-        topics=[handle_topic_request(topic_request) for topic_request in request.topics],
+        topics=[_handle_topic_request(topic_request) for topic_request in request.topics],
     )
 
 
-def handle_topic_request(topic_request: TopicRequest) -> ResponseTopic:
+def _handle_topic_request(topic_request: TopicRequest) -> ResponseTopic:
     cluster_metadata = ClusterMetadata()
 
     if (topic_id := cluster_metadata.get_topic_id(topic_request.name)) is None:
         return ResponseTopic(
             error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
             name=topic_request.name,
-            topic_id=uuid.UUID(int=0),
+            topic_id=UUID(int=0),
         )
 
     return ResponseTopic(

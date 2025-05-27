@@ -1,29 +1,14 @@
-import abc
-import dataclasses
-import io
-import typing
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from io import BytesIO
+from typing import Generator, Self
 
-from ..protocol import (
-    Readable,
-    decode_array,
-    decode_int16,
-    decode_int32,
-    decode_int64,
-    decode_int8,
-    decode_uint32,
-    encode_array,
-    encode_int16,
-    encode_int32,
-    encode_int64,
-    encode_int8,
-    encode_uint32,
-)
-
+from ..protocol import *
 from .record import DefaultRecord, MetadataRecord, Record
 
 
-@dataclasses.dataclass(frozen=True)
-class RecordBatch(abc.ABC):
+@dataclass(frozen=True)
+class RecordBatch(ABC):
     base_offset: int
     partition_leader_epoch: int
     magic: int
@@ -38,15 +23,15 @@ class RecordBatch(abc.ABC):
     records: list[Record]
 
     @classmethod
-    @abc.abstractmethod
+    @abstractmethod
     def decode_record(cls, readable: Readable) -> Record:
         raise NotImplementedError
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         base_offset = decode_int64(readable)
         batch_length = decode_int32(readable)
-        new_readable = io.BytesIO(readable.read(batch_length))
+        new_readable = BytesIO(readable.read(batch_length))
         return cls(
             base_offset=base_offset,
             partition_leader_epoch=decode_int32(new_readable),
@@ -91,7 +76,7 @@ class MetadataRecordBatch(RecordBatch):
         return MetadataRecord.decode(readable)
 
 
-def read_record_batches(topic_name: str, partition_index: int) -> typing.Generator[RecordBatch, None, None]:
+def read_record_batches(topic_name: str, partition_index: int) -> Generator[RecordBatch, None, None]:
     if topic_name == "__cluster_metadata":
         assert partition_index == 0
         record_batch_class = MetadataRecordBatch

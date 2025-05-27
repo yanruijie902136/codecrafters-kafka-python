@@ -1,29 +1,18 @@
-import dataclasses
-import typing
+from dataclasses import dataclass
+from typing import Self
 
-from ..protocol import (
-    ApiKey,
-    ErrorCode,
-    Readable,
-    decode_compact_string,
-    decode_tagged_fields,
-    encode_compact_array,
-    encode_int16,
-    encode_int32,
-    encode_tagged_fields,
-)
-
+from ..protocol import *
 from .request import Request, RequestHeader
 from .response import Response, ResponseHeader
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ApiVersionsRequest(Request):
     client_software_name: str
     client_software_version: str
 
     @classmethod
-    def decode_body(cls, header: RequestHeader, readable: Readable) -> typing.Self:
+    def decode_body(cls, header: RequestHeader, readable: Readable) -> Self:
         request = cls(
             header=header,
             client_software_name=decode_compact_string(readable),
@@ -33,7 +22,7 @@ class ApiVersionsRequest(Request):
         return request
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ApiVersion:
     api_key: ApiKey
     min_version: int
@@ -48,7 +37,7 @@ class ApiVersion:
         ])
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ApiVersionsResponse(Response):
     error_code: ErrorCode
     api_keys: list[ApiVersion]

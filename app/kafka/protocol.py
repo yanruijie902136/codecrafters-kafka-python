@@ -1,16 +1,51 @@
 import enum
 import itertools
-import typing
-import uuid
+from typing import Callable, Self, Protocol
+from uuid import UUID
+
+__all__ = [
+    "ApiKey",
+    "ErrorCode",
+    "Readable",
+    "decode_array",
+    "decode_compact_array",
+    "decode_compact_string",
+    "decode_int16",
+    "decode_int32",
+    "decode_int64",
+    "decode_int8",
+    "decode_nullable_string",
+    "decode_uint32",
+    "decode_unsigned_varint",
+    "decode_uuid",
+    "decode_tagged_fields",
+    "decode_varint",
+    "decode_varlong",
+    "encode_array",
+    "encode_boolean",
+    "encode_compact_array",
+    "encode_compact_nullable_string",
+    "encode_compact_string",
+    "encode_int16",
+    "encode_int32",
+    "encode_int64",
+    "encode_int8",
+    "encode_uint32",
+    "encode_unsigned_varint",
+    "encode_uuid",
+    "encode_tagged_fields",
+    "encode_varint",
+    "encode_varlong",
+]
 
 
-class Readable(typing.Protocol):
+class Readable(Protocol):
     def read(self, n: int, /) -> bytes:
         ...
 
 
-type DecodeFunction[T] = typing.Callable[[Readable], T]
-type EncodeFunction[T] = typing.Callable[[T], bytes]
+type DecodeFunction[T] = Callable[[Readable], T]
+type EncodeFunction[T] = Callable[[T], bytes]
 
 
 @enum.unique
@@ -20,7 +55,7 @@ class ApiKey(enum.IntEnum):
     DESCRIBE_TOPIC_PARTITIONS = 75
 
     @classmethod
-    def decode(cls, readable: Readable) -> typing.Self:
+    def decode(cls, readable: Readable) -> Self:
         return cls(decode_int16(readable))
 
     def encode(self) -> bytes:
@@ -119,11 +154,11 @@ def encode_varlong(n: int) -> bytes:
     return encode_unsigned_varint((n << 1) ^ (n >> 63))
 
 
-def decode_uuid(readable: Readable) -> uuid.UUID:
-    return uuid.UUID(bytes=readable.read(16))
+def decode_uuid(readable: Readable) -> UUID:
+    return UUID(bytes=readable.read(16))
 
 
-def encode_uuid(u: uuid.UUID) -> bytes:
+def encode_uuid(u: UUID) -> bytes:
     return u.bytes
 
 

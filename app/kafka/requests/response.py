@@ -1,29 +1,28 @@
-import abc
-import dataclasses
-import typing
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Literal, Self
 
-from ..protocol import ApiKey, encode_int32, encode_tagged_fields
-
+from ..protocol import *
 from .request import Request, RequestHeader
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class ResponseHeader:
     correlation_id: int
 
-    def encode(self, version: typing.Literal[0, 1]) -> bytes:
+    def encode(self, version: Literal[0, 1]) -> bytes:
         data = encode_int32(self.correlation_id)
         if version == 1:
             data += encode_tagged_fields()
         return data
 
     @classmethod
-    def from_request_header(cls, request_header: RequestHeader) -> typing.Self:
+    def from_request_header(cls, request_header: RequestHeader) -> Self:
         return cls(request_header.correlation_id)
 
 
-@dataclasses.dataclass(frozen=True)
-class Response(abc.ABC):
+@dataclass(frozen=True)
+class Response(ABC):
     header: ResponseHeader
 
     def encode(self) -> bytes:
@@ -32,7 +31,7 @@ class Response(abc.ABC):
     def _encode_header(self) -> bytes:
         return self.header.encode(version=1)
 
-    @abc.abstractmethod
+    @abstractmethod
     def _encode_body(self) -> bytes:
         raise NotImplementedError
 
