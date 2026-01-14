@@ -1,23 +1,42 @@
 __all__ = (
+    "encode_boolean",
     "encode_compact_array",
+    "encode_compact_string",
     "encode_int16",
     "encode_int32",
+    "encode_int8",
+    "encode_uuid",
     "encode_varint",
+    "read_compact_array",
     "read_compact_string",
     "read_int16",
     "read_int32",
+    "read_int8",
     "read_string",
     "read_varint",
 )
 
 
 import itertools
-from typing import BinaryIO, Callable, Literal, Optional, Protocol, Sequence, TypeVar, overload
+from typing import BinaryIO, Callable, List, Literal, Optional, Protocol, Sequence, TypeVar, overload
+from uuid import UUID
 
 from .utils import readexactly
 
 
 _T = TypeVar("_T")
+
+
+def encode_boolean(flag: bool) -> bytes:
+    return encode_int8(1 if flag else 0)
+
+
+def read_int8(stream: BinaryIO) -> int:
+    return int.from_bytes(readexactly(stream, 1), byteorder="big", signed=True)
+
+
+def encode_int8(n: int) -> bytes:
+    return n.to_bytes(1, byteorder="big", signed=True)
 
 
 def read_int16(stream: BinaryIO) -> int:
@@ -64,6 +83,10 @@ def encode_varint(n: int, signed: bool = False) -> bytes:
     return bytes(data)
 
 
+def encode_uuid(u: UUID) -> bytes:
+    return u.bytes
+
+
 @overload
 def read_string(stream: BinaryIO, allow_none: Literal[False] = False) -> str: ...
 @overload
@@ -94,6 +117,28 @@ def read_compact_string(stream, allow_none=False):
         else:
             raise ValueError("Non-optional compact string has null value")
     return readexactly(stream, length).decode()
+
+
+def encode_compact_string(s: Optional[str]) -> bytes:
+    if s is None:
+        return encode_varint(0)
+    return encode_varint(len(s)+1) + s.encode()
+
+
+@overload
+def read_compact_array(stream: BinaryIO, read_func: Callable[[BinaryIO], _T], allow_none: Literal[False] = False) -> List[_T]: ...
+@overload
+def read_compact_array(stream: BinaryIO, read_func: Callable[[BinaryIO], _T], allow_none: Literal[True]) -> Optional[List[_T]]: ...
+
+
+def read_compact_array(stream, read_func, allow_none=False):
+    length = read_varint(stream) - 1
+    if length < 0:
+        if allow_none:
+            return None
+        else:
+            raise ValueError("Non-optional compact array has null value")
+    return [read_func(stream) for _ in range(length)]
 
 
 class _Encodable(Protocol):

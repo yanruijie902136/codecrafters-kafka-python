@@ -1,6 +1,7 @@
 import asyncio
 import io
 from asyncio import StreamReader, StreamWriter
+from pprint import pprint
 
 from .handlers import handle_request
 from .protocol.requests import AbstractRequest, read_request
@@ -51,7 +52,9 @@ async def client_connected_cb(reader: StreamReader, writer: StreamWriter) -> Non
     async with client:
         while True:
             request = await recv_request_from_client(client)
+            pprint(request)
             response = handle_request(request)
+            pprint(response)
             await send_response_to_client(client, response)
 
 

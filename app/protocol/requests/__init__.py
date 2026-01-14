@@ -1,6 +1,7 @@
 __all__ = (
     "AbstractRequest",
     "ApiVersionsRequest",
+    "DescribeTopicPartitionsRequest",
     "RequestHeader",
     "read_request",
 )
@@ -11,6 +12,7 @@ from ..constants import ApiKey
 
 from .abstract import AbstractRequest
 from .api_versions import ApiVersionsRequest
+from .describe_topic_partitions import DescribeTopicPartitionsRequest
 from .header import RequestHeader
 
 
@@ -19,3 +21,5 @@ def read_request(stream: BinaryIO) -> AbstractRequest:
     match header.api_key:
         case ApiKey.API_VERSIONS:
             return ApiVersionsRequest.read(stream, header)
+        case ApiKey.DESCRIBE_TOPIC_PARTITIONS:
+            return DescribeTopicPartitionsRequest.read(stream, header)

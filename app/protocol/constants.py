@@ -22,6 +22,7 @@ class ApiKey(IntEnum):
 @unique
 class ErrorCode(IntEnum):
     NONE = 0
+    UNKNOWN_TOPIC_OR_PARTITION = 3
     UNSUPPORTED_VERSION = 35
 
     def encode(self) -> bytes:
