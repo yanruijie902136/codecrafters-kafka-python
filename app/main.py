@@ -1,16 +1,20 @@
-import socket  # noqa: F401
+import asyncio
+from asyncio import StreamReader, StreamWriter
 
 
-def main():
-    # You can use print statements as follows for debugging,
-    # they'll be visible when running tests.
-    print("Logs from your program will appear here!")
+class Server:
+    async def run(self) -> None:
+        server = await asyncio.start_server(
+            self._client_connected_cb, "localhost", 9092,
+            reuse_address=True, reuse_port=True, start_serving=False)
 
-    # TODO: Uncomment the code below to pass the first stage
-    #
-    # server = socket.create_server(("localhost", 9092), reuse_port=True)
-    # server.accept() # wait for client
+        async with server:
+            await server.serve_forever()
+
+    async def _client_connected_cb(self, reader: StreamReader, writer: StreamWriter) -> None:
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
-    main()
+    server = Server()
+    asyncio.run(server.run())
