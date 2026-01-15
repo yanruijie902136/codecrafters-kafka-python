@@ -1,6 +1,7 @@
 __all__ = (
     "encode_boolean",
     "encode_compact_array",
+    "encode_compact_bytes",
     "encode_compact_string",
     "encode_int16",
     "encode_int32",
@@ -158,6 +159,12 @@ def encode_compact_string(s: Optional[str]) -> bytes:
     if s is None:
         return encode_varint(0)
     return encode_varint(len(s)+1) + s.encode()
+
+
+def encode_compact_bytes(data: Optional[bytes]) -> bytes:
+    if data is None:
+        return encode_varint(0)
+    return encode_varint(len(data)+1) + data
 
 
 @overload

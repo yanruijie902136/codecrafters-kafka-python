@@ -10,7 +10,13 @@ from typing import List, Optional
 from uuid import UUID
 
 from ..constants import ErrorCode
-from ..primitives import encode_compact_array, encode_int32, encode_int64, encode_uuid
+from ..primitives import (
+    encode_compact_array,
+    encode_compact_bytes,
+    encode_int32,
+    encode_int64,
+    encode_uuid,
+)
 from ..tagged_fields import encode_tagged_fields
 
 from .abstract import AbstractResponse
@@ -38,7 +44,7 @@ class PartitionData:
     log_start_offset: int
     aborted_transactions: Optional[List[AbortedTransaction]]
     preferred_read_replica: int
-    # TODO: add records field
+    records: Optional[bytes]
 
     def encode(self) -> bytes:
         return b"".join([
@@ -49,7 +55,7 @@ class PartitionData:
             encode_int64(self.log_start_offset),
             encode_compact_array(self.aborted_transactions),
             encode_int32(self.preferred_read_replica),
-            b"\x00",  # TODO: encode records field
+            encode_compact_bytes(self.records),
             encode_tagged_fields(),
         ])
 
