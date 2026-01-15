@@ -49,7 +49,7 @@ class PartitionData:
             encode_int64(self.log_start_offset),
             encode_compact_array(self.aborted_transactions),
             encode_int32(self.preferred_read_replica),
-            # TODO: encode records field
+            b"\x00",  # TODO: encode records field
             encode_tagged_fields(),
         ])
 
