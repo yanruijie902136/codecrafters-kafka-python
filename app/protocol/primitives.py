@@ -10,6 +10,7 @@ __all__ = (
     "encode_uuid",
     "encode_varint",
     "read_compact_array",
+    "read_compact_bytes",
     "read_compact_string",
     "read_int16",
     "read_int32",
@@ -159,6 +160,22 @@ def encode_compact_string(s: Optional[str]) -> bytes:
     if s is None:
         return encode_varint(0)
     return encode_varint(len(s)+1) + s.encode()
+
+
+@overload
+def read_compact_bytes(stream: BinaryIO, allow_none: Literal[False] = False) -> bytes: ...
+@overload
+def read_compact_bytes(stream: BinaryIO, allow_none: Literal[True]) -> Optional[bytes]: ...
+
+
+def read_compact_bytes(stream, allow_none=False):
+    length = read_varint(stream) - 1
+    if length < 0:
+        if allow_none:
+            return None
+        else:
+            raise ValueError("Non-optional compact bytes has null value")
+    return readexactly(stream, length)
 
 
 def encode_compact_bytes(data: Optional[bytes]) -> bytes:

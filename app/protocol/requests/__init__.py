@@ -3,6 +3,7 @@ __all__ = (
     "ApiVersionsRequest",
     "DescribeTopicPartitionsRequest",
     "FetchRequest",
+    "ProduceRequest",
     "RequestHeader",
     "read_request",
 )
@@ -16,6 +17,7 @@ from .api_versions import ApiVersionsRequest
 from .describe_topic_partitions import DescribeTopicPartitionsRequest
 from .fetch import FetchRequest
 from .header import RequestHeader
+from .produce import ProduceRequest
 
 
 def read_request(stream: BinaryIO) -> AbstractRequest:
@@ -27,3 +29,5 @@ def read_request(stream: BinaryIO) -> AbstractRequest:
             return DescribeTopicPartitionsRequest.read(stream, header)
         case ApiKey.FETCH:
             return FetchRequest.read(stream, header)
+        case ApiKey.PRODUCE:
+            return ProduceRequest.read(stream, header)
