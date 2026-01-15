@@ -4,6 +4,7 @@ __all__ = (
     "encode_compact_string",
     "encode_int16",
     "encode_int32",
+    "encode_int64",
     "encode_int8",
     "encode_uuid",
     "encode_varint",
@@ -60,6 +61,10 @@ def encode_int32(n: int) -> bytes:
 
 def read_int64(stream: BinaryIO) -> int:
     return int.from_bytes(readexactly(stream, 8), byteorder="big", signed=True)
+
+
+def encode_int64(n: int) -> bytes:
+    return n.to_bytes(8, byteorder="big", signed=True)
 
 
 def read_uint32(stream: BinaryIO) -> int:
