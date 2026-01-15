@@ -8,6 +8,7 @@ from .primitives import encode_int16, read_int16
 
 @unique
 class ApiKey(IntEnum):
+    FETCH = 1
     API_VERSIONS = 18
     DESCRIBE_TOPIC_PARTITIONS = 75
 
