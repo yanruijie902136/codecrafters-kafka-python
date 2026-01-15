@@ -48,7 +48,7 @@ def _make_response_topic(topic_request: TopicRequest) -> ResponseTopic:
 
 
 def handle_describe_topic_partitions_request(request: DescribeTopicPartitionsRequest) -> DescribeTopicPartitionsResponse:
-    response_topics = [_make_response_topic(topic_request) for topic_request in request.topics]
+    response_topics = [_make_response_topic(t) for t in request.topics]
     response_topics.sort(key=lambda t: t.name or "")
     return DescribeTopicPartitionsResponse(
         header=make_response_header(request),

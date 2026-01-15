@@ -60,5 +60,5 @@ def handle_fetch_request(request: FetchRequest) -> FetchResponse:
         throttle_time_ms=0,
         error_code=ErrorCode.NONE,
         session_id=request.session_id,
-        responses=[_make_fetchable_topic_response(fetch_topic) for fetch_topic in request.topics],
+        responses=[_make_fetchable_topic_response(t) for t in request.topics],
     )
