@@ -16,17 +16,28 @@ def _is_valid_topic_partition(topic_name: str, partition_index: int) -> bool:
 
 
 def _make_partition_produce_response(topic_name: str, partition_data: PartitionProduceData) -> PartitionProduceResponse:
-    if _is_valid_topic_partition(topic_name, partition_data.index):
-        error_code, base_offset, log_start_offset = ErrorCode.NONE, 0, 0
-    else:
-        error_code, base_offset, log_start_offset = ErrorCode.UNKNOWN_TOPIC_OR_PARTITION, -1, -1
+    if not _is_valid_topic_partition(topic_name, partition_data.index):
+        return PartitionProduceResponse(
+            index=partition_data.index,
+            error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
+            base_offset=-1,
+            log_append_time_ms=-1,
+            log_start_offset=-1,
+            record_errors=[],
+            error_message=None,
+        )
+
+    if partition_data.records is not None:
+        path = f"/tmp/kraft-combined-logs/{topic_name}-{partition_data.index}/00000000000000000000.log"
+        with open(path, mode="ab") as f:
+            f.write(partition_data.records)
 
     return PartitionProduceResponse(
         index=partition_data.index,
-        error_code=error_code,
-        base_offset=base_offset,
+        error_code=ErrorCode.NONE,
+        base_offset=0,
         log_append_time_ms=-1,
-        log_start_offset=log_start_offset,
+        log_start_offset=0,
         record_errors=[],
         error_message=None,
     )
