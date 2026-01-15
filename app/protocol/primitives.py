@@ -11,11 +11,14 @@ __all__ = (
     "read_compact_string",
     "read_int16",
     "read_int32",
+    "read_int64",
     "read_int8",
     "read_string",
+    "read_uint32",
+    "read_uuid",
     "read_varint",
+    "read_varlong",
 )
-
 
 import itertools
 from typing import BinaryIO, Callable, List, Literal, Optional, Protocol, Sequence, TypeVar, overload
@@ -55,6 +58,14 @@ def encode_int32(n: int) -> bytes:
     return n.to_bytes(4, byteorder="big", signed=True)
 
 
+def read_int64(stream: BinaryIO) -> int:
+    return int.from_bytes(readexactly(stream, 8), byteorder="big", signed=True)
+
+
+def read_uint32(stream: BinaryIO) -> int:
+    return int.from_bytes(readexactly(stream, 4), byteorder="big", signed=False)
+
+
 def read_varint(stream: BinaryIO, signed: bool = False) -> int:
     n = 0
     for shamt in itertools.count(start=0, step=7):
@@ -81,6 +92,25 @@ def encode_varint(n: int, signed: bool = False) -> bytes:
         val >>= 7
     data.append(val)
     return bytes(data)
+
+
+def read_varlong(stream: BinaryIO, signed: bool = False) -> int:
+    n = 0
+    for shamt in itertools.count(start=0, step=7):
+        c = ord(readexactly(stream, 1))
+        n |= (c & 0x7f) << shamt
+        if not c & 0x80:
+            break
+        elif shamt >= 63:
+            raise ValueError("Too many bytes in varlong")
+
+    if signed:
+        n = (n >> 1) ^ -(n & 1)
+    return n
+
+
+def read_uuid(stream: BinaryIO) -> UUID:
+    return UUID(bytes=readexactly(stream, 16))
 
 
 def encode_uuid(u: UUID) -> bytes:
