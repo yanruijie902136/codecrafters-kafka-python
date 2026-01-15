@@ -13,7 +13,7 @@ from .utils import make_response_header
 
 
 def _make_response_topic(topic_request: TopicRequest) -> ResponseTopic:
-    topic = ClusterMetadata().get_topic(topic_request.name)
+    topic = ClusterMetadata().get_topic(name=topic_request.name)
     if topic is None:
         return ResponseTopic(
             error_code=ErrorCode.UNKNOWN_TOPIC_OR_PARTITION,
